@@ -1,0 +1,25 @@
+{
+  "name": "risenext-voice-ai",
+  "version": "0.1.0",
+  "private": true,
+  "description": "RiseNext Voice AI Platform — npm workspace root (frontend only; Python is managed by uv)",
+  "workspaces": [
+    "apps/web"
+  ],
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "scripts": {
+    "dev": "npm run dev --workspace @risenext/web",
+    "build": "npm run build --workspace @risenext/web",
+    "start": "npm run start --workspace @risenext/web",
+    "lint": "npm run lint --workspace @risenext/web",
+    "typecheck": "npm run typecheck --workspace @risenext/web",
+    "format": "prettier --write \"apps/web/**/*.{ts,tsx,css,json,md}\"",
+    "format:check": "prettier --check \"apps/web/**/*.{ts,tsx,css,json,md}\""
+  },
+  "devDependencies": {
+    "prettier": "^3.6.2",
+    "prettier-plugin-tailwindcss": "^0.6.14"
+  }
+}

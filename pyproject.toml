@@ -1,0 +1,340 @@
+# ===========================================================================
+# RiseNext Voice AI Platform — uv workspace root
+#
+# This root is NOT a distributable package. It exists to:
+#   1. declare the uv workspace members (apps/* and packages/*)
+#   2. pin the shared dev toolchain (ruff / mypy / pytest / import-linter)
+#   3. own the repo-wide tool configuration so every member behaves identically
+#
+# Layering rules are ENFORCED by import-linter (see [tool.importlinter] below),
+# not by convention. See docs/ARCHITECTURE.md for the rationale.
+# ===========================================================================
+
+[project]
+name = "risenext-voice-ai"
+version = "0.1.0"
+description = "RiseNext Voice AI Platform — multi-tenant realtime AI calling platform"
+requires-python = ">=3.12,<3.14"
+# The root pulls every workspace member so that `uv sync` gives a developer one
+# virtualenv that can run the API, the voice gateway and the worker locally.
+dependencies = [
+    "rn-core",
+    "rn-domain",
+    "rn-persistence",
+    "rn-providers",
+    "rn-services",
+    "rn-agent",
+    "rn-orchestration",
+    "rn-api",
+    "rn-voice",
+    "rn-worker",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = ["apps/api", "apps/voice-gateway", "apps/worker", "packages/*"]
+
+[tool.uv.sources]
+rn-core = { workspace = true }
+rn-domain = { workspace = true }
+rn-persistence = { workspace = true }
+rn-providers = { workspace = true }
+rn-services = { workspace = true }
+rn-agent = { workspace = true }
+rn-orchestration = { workspace = true }
+rn-api = { workspace = true }
+rn-voice = { workspace = true }
+rn-worker = { workspace = true }
+
+[dependency-groups]
+dev = [
+    "ruff>=0.13.0",
+    "mypy>=1.18.0",
+    "import-linter>=2.3",
+    "pytest>=8.4.0",
+    "pytest-asyncio>=1.0.0",
+    "pytest-cov>=6.0.0",
+    "pytest-randomly>=3.16.0",
+    "anyio>=4.9.0",
+    "respx>=0.22.0",              # httpx mocking — provider adapters must be testable offline
+    "fakeredis>=2.31.0",          # Redis-free unit tests
+    "testcontainers[postgres]>=4.13.0",  # real Postgres+pgvector for integration tests
+    "freezegun>=1.5.0",           # deterministic time for callback/window logic
+    "types-python-dateutil>=2.9.0",
+]
+
+# ===========================================================================
+# Ruff — formatter + linter. Single source of truth for Python style.
+# ===========================================================================
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["**/migrations/versions/*.py"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W",     # pycodestyle
+    "F",          # pyflakes
+    "I",          # isort
+    "N",          # pep8-naming
+    "UP",         # pyupgrade
+    "B",          # flake8-bugbear
+    "C4",         # comprehensions
+    "DTZ",        # flake8-datetimez — naive datetimes are a real bug source for call scheduling
+    "T20",        # flake8-print — no stray print() in a structured-logging codebase
+    "SIM",        # flake8-simplify
+    "TID",        # flake8-tidy-imports
+    "PTH",        # use pathlib
+    "RUF",        # ruff-specific
+    "ASYNC",      # flake8-async — blocking calls in async code
+    "S",          # bandit security rules
+    "LOG", "G",   # logging correctness
+    "ARG",        # unused arguments
+    "PL",         # pylint subset
+]
+ignore = [
+    "E501",       # line length handled by the formatter
+    "PLR0913",    # many-argument functions are acceptable in adapters/DI wiring
+    "S101",       # assert is fine in tests (also relaxed per-file below)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/**" = ["S", "ARG", "PLR2004"]
+"tests/**" = ["S", "ARG", "PLR2004"]
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "parents"
+
+[tool.ruff.lint.isort]
+known-first-party = [
+    "rn_core", "rn_domain", "rn_persistence", "rn_providers",
+    "rn_services", "rn_agent", "rn_orchestration",
+    "rn_api", "rn_voice", "rn_worker",
+]
+
+# ===========================================================================
+# Mypy — typed by default. New code is expected to pass strict.
+# ===========================================================================
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unreachable = true
+warn_unused_ignores = true
+disallow_untyped_defs = true
+disallow_any_generics = true
+no_implicit_reexport = true
+plugins = ["pydantic.mypy"]
+mypy_path = [
+    "packages/core/src", "packages/domain/src", "packages/persistence/src",
+    "packages/providers/src", "packages/services/src", "packages/agent/src",
+    "packages/orchestration/src",
+    "apps/api/src", "apps/voice-gateway/src", "apps/worker/src",
+]
+exclude = ["(^|/)migrations/versions/"]
+
+[[tool.mypy.overrides]]
+module = ["tests.*", "*.tests.*"]
+disallow_untyped_defs = false
+
+# ===========================================================================
+# Pytest
+# ===========================================================================
+[tool.pytest.ini_options]
+minversion = "8.0"
+# `live` tests call real, paid provider APIs and dial real phone numbers, and `load`
+# tests take minutes. A bare `pytest` must fail closed: opt in with `-m live`.
+addopts = "-ra --strict-markers --strict-config -m 'not live and not load'"
+testpaths = ["tests", "packages", "apps"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+markers = [
+    "unit: fast, no external I/O",
+    "integration: needs Postgres and/or Redis (testcontainers or local compose)",
+    "provider: talks to a mocked provider adapter; never a real paid API",
+    "live: hits a REAL external provider — costs money, opt-in only, never in CI by default",
+    "agent_eval: scripted conversation evaluation against an agent definition",
+    "load: performance/concurrency test, excluded from the default run",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["packages", "apps"]
+omit = ["*/migrations/*", "*/tests/*"]
+
+[tool.coverage.report]
+skip_empty = true
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "@overload",
+]
+
+# ===========================================================================
+# import-linter — the layering rules are executable, not aspirational.
+# Run with: uv run lint-imports
+# ===========================================================================
+[tool.importlinter]
+# Required because several contracts forbid THIRD-PARTY modules (langchain, openai,
+# sqlalchemy, taskiq, fastapi). Without this, import-linter only graphs first-party
+# imports and those contracts would silently pass while being violated.
+include_external_packages = true
+root_packages = [
+    "rn_core", "rn_domain", "rn_persistence", "rn_providers",
+    "rn_services", "rn_agent", "rn_orchestration",
+    "rn_api", "rn_voice", "rn_worker",
+]
+
+[[tool.importlinter.contracts]]
+name = "Layered architecture (high -> low, no upward imports)"
+type = "layers"
+layers = [
+    "rn_api | rn_voice | rn_worker",
+    "rn_orchestration",
+    "rn_agent",
+    "rn_services",
+    "rn_persistence | rn_providers",
+    "rn_domain",
+    "rn_core",
+]
+
+[[tool.importlinter.contracts]]
+name = "Domain is pure — no infrastructure, no frameworks"
+type = "forbidden"
+source_modules = ["rn_domain"]
+forbidden_modules = [
+    "sqlalchemy", "alembic", "fastapi", "redis", "httpx",
+    "langchain", "langgraph", "openai", "taskiq", "boto3", "aioboto3",
+]
+
+# --------------------------------------------------------------------------
+# NOTE ON `allow_indirect_imports`
+#
+# import-linter's forbidden contracts flag TRANSITIVE chains by default. Every
+# contract below is about what a package may import DIRECTLY, because the whole
+# point of the layering is that lower layers reach infrastructure *on behalf of*
+# higher ones: rn_voice -> rn_services -> rn_persistence -> sqlalchemy is the
+# intended path, not a violation. Without allow_indirect_imports these contracts
+# would forbid the architecture they exist to protect.
+#
+# The layers contract above is what governs indirect reachability.
+# --------------------------------------------------------------------------
+
+# --------------------------------------------------------------------------
+# THE PERMANENT INVARIANT.
+#
+# `rn_voice.media` is the audio hot path: telephony transport, codecs, the
+# pacing/alignment ring buffer, played-millisecond accounting, VAD plumbing and
+# barge-in mechanics. It moves bytes. It may never import an orchestration
+# framework, the orchestration package, the agent runtime or a business service.
+#
+# This one does NOT relax. A benchmark cannot buy an exemption, because the cost
+# of coupling audio transport to a graph framework is not primarily latency —
+# it is that the transport stops being independently testable, replaceable and
+# reasonable about. See ADR-009.
+# --------------------------------------------------------------------------
+[[tool.importlinter.contracts]]
+name = "Media transport layer is framework-free and orchestration-free"
+type = "forbidden"
+allow_indirect_imports = true
+source_modules = ["rn_voice.media"]
+forbidden_modules = [
+    "langchain", "langchain_core", "langchain_openai", "langchain_protocol",
+    "langgraph", "langgraph_sdk", "langsmith",
+    "rn_orchestration", "rn_agent", "rn_services",
+]
+
+# The separation the platform is built around, made executable:
+#   MEDIA TRANSPORT -> REALTIME SESSION -> AGENT RUNTIME -> (optional) ORCHESTRATION
+# Only `rn_voice.runtime` may reach an orchestration layer. `session` drives
+# `media` through its interfaces; `media` knows nothing above it.
+[[tool.importlinter.contracts]]
+name = "Voice gateway internal layering (runtime -> session -> media)"
+type = "layers"
+layers = [
+    "rn_voice.runtime",
+    "rn_voice.session",
+    "rn_voice.media",
+]
+
+# The orchestration FRAMEWORK stays in one package. This is about where LangChain
+# and LangGraph may be *written*, not about who may call orchestration: callers
+# go through rn_orchestration's own interfaces rather than importing the
+# framework themselves. rn_voice.runtime and rn_api are deliberately permitted to
+# depend on rn_orchestration when a benchmark justifies it (ADR-009) — what they
+# may not do is grow their own graph code.
+#
+# langchain_openai / langchain_protocol / langgraph_sdk / langsmith are separate
+# top-level distributions, not submodules, so each must be named explicitly.
+[[tool.importlinter.contracts]]
+name = "LangChain/LangGraph is written only in rn_orchestration"
+type = "forbidden"
+allow_indirect_imports = true
+source_modules = [
+    "rn_core", "rn_domain", "rn_persistence", "rn_providers",
+    "rn_services", "rn_agent", "rn_voice", "rn_api", "rn_worker",
+]
+forbidden_modules = [
+    "langchain", "langchain_core", "langchain_openai", "langchain_protocol",
+    "langgraph", "langgraph_sdk", "langsmith",
+]
+
+[[tool.importlinter.contracts]]
+name = "Vendor SDKs stay inside rn_providers"
+type = "forbidden"
+allow_indirect_imports = true
+source_modules = [
+    "rn_core", "rn_domain", "rn_persistence", "rn_services", "rn_agent",
+    "rn_orchestration", "rn_api", "rn_voice", "rn_worker",
+]
+forbidden_modules = ["openai", "boto3", "aioboto3", "clerk_backend_api", "svix"]
+
+# Domain data is reached through rn_services. psycopg is deliberately NOT forbidden
+# here: rn_orchestration owns the LangGraph checkpointer, which is framework state
+# for a graph run, not business data. Domain tables stay behind rn_services.
+[[tool.importlinter.contracts]]
+name = "Agent layers reach domain data only through rn_services"
+type = "forbidden"
+allow_indirect_imports = true
+source_modules = ["rn_agent", "rn_orchestration"]
+forbidden_modules = ["rn_persistence", "sqlalchemy", "asyncpg"]
+
+# The voice gateway is a media bridge. It reads its context through rn_services and
+# writes durable state through rn_services. A direct DB call here is a latency bug.
+#
+# Note this is enforcement by CONTRACT, not by packaging: rn_voice depends on
+# rn_services, so SQLAlchemy and the Postgres driver are present in the gateway
+# image. What is prevented is the gateway opening a session of its own.
+[[tool.importlinter.contracts]]
+name = "Voice gateway holds no database session of its own"
+type = "forbidden"
+allow_indirect_imports = true
+source_modules = ["rn_voice"]
+forbidden_modules = ["sqlalchemy", "asyncpg", "psycopg", "alembic"]
+
+# rn_api and rn_voice both serve HTTP/WebSocket. No SHARED package may.
+[[tool.importlinter.contracts]]
+name = "HTTP framework stays in the app layer, never in a shared package"
+type = "forbidden"
+allow_indirect_imports = true
+source_modules = [
+    "rn_core", "rn_domain", "rn_persistence", "rn_providers",
+    "rn_services", "rn_agent", "rn_orchestration", "rn_worker",
+]
+forbidden_modules = ["fastapi", "starlette"]
+
+# Only the API and the workers own a broker connection. Everything else records its
+# intent in the transactional outbox (same transaction as the state change) and lets
+# the relay publish it. This removes the dual-write between Postgres and Redis, and
+# keeps a broker client out of the voice gateway entirely.
+[[tool.importlinter.contracts]]
+name = "Job broker is owned by rn_api and rn_worker only"
+type = "forbidden"
+allow_indirect_imports = true
+source_modules = [
+    "rn_core", "rn_domain", "rn_persistence", "rn_providers",
+    "rn_services", "rn_agent", "rn_orchestration", "rn_voice",
+]
+forbidden_modules = ["taskiq", "taskiq_redis"]

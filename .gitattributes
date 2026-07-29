@@ -1,0 +1,30 @@
+# Normalise line endings. Development happens on Windows; CI and production run
+# on Linux. Without this, every file round-trips through CRLF and diffs become noise.
+* text=auto eol=lf
+
+# Shell scripts and Dockerfiles MUST be LF or they break inside a Linux container.
+*.sh            text eol=lf
+*.bash          text eol=lf
+Dockerfile      text eol=lf
+*.Dockerfile    text eol=lf
+
+# Windows-only files stay CRLF.
+*.ps1           text eol=crlf
+*.bat           text eol=crlf
+*.cmd           text eol=crlf
+
+# Binary — never diff, never normalise.
+*.png           binary
+*.jpg           binary
+*.ico           binary
+*.pdf           binary
+*.woff          binary
+*.woff2         binary
+*.wav           binary
+*.mp3           binary
+*.pcm           binary
+*.xlsx          binary
+
+# Lockfiles: generated. Collapse them in review and let the tool own conflicts.
+uv.lock         linguist-generated=true -diff
+package-lock.json linguist-generated=true -diff

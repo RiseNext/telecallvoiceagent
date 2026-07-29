@@ -1,0 +1,22 @@
+[project]
+name = "rn-domain"
+version = "0.1.0"
+description = "Pure domain model: entities, value objects, domain events, invariants and policies. No I/O."
+requires-python = ">=3.12,<3.14"
+dependencies = [
+    "rn-core",
+    "pydantic>=2.11.0",
+    # E.164 normalisation/validation is a domain invariant for an India-first dialler,
+    # and phonenumbers is a pure-computation library, so it does not violate domain purity.
+    "phonenumbers>=9.0.0",
+]
+
+[tool.uv.sources]
+rn-core = { workspace = true }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/rn_domain"]

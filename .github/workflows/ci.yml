@@ -1,0 +1,108 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A new push supersedes an in-flight run on the same branch.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # Live tests hit real, paid providers. They must never run automatically.
+  RUN_LIVE_PROVIDER_TESTS: "false"
+
+jobs:
+  python:
+    name: Python — lint, types, boundaries, tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: risenext
+          POSTGRES_PASSWORD: risenext
+          POSTGRES_DB: risenext_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U risenext -d risenext_test"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+      redis:
+        image: redis:8-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql+asyncpg://risenext:risenext@localhost:5432/risenext_test
+      DATABASE_URL_DIRECT: postgresql+asyncpg://risenext:risenext@localhost:5432/risenext_test
+      REDIS_URL: redis://localhost:6379/0
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      # --frozen fails if uv.lock is stale relative to the manifests, which is
+      # exactly what we want: a dependency change must be committed with its lock.
+      - name: Sync workspace
+        run: uv sync --frozen
+
+      - name: Format check
+        run: uv run ruff format --check .
+
+      - name: Lint
+        run: uv run ruff check . --output-format=github
+
+      - name: Type check
+        run: uv run mypy .
+
+      # The layering rules are the architecture. If this fails, the fix is a
+      # design conversation, not a contract edit.
+      - name: Architecture boundaries
+        run: uv run lint-imports --verbose
+
+      - name: Tests
+        run: uv run pytest -m "not live and not load" --cov --cov-report=term-missing
+
+  web:
+    name: Frontend — lint, types, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run format:check
+
+      - run: npm run lint
+
+      - run: npm run typecheck
+
+      - run: npm run build
+
+  # Added in the phase that introduces the first migration (see docs/ROADMAP.md).
+  # It must check: migrations apply forward from empty, downgrade cleanly, and
+  # that no migration takes a lock that would block a live calls table.
+  #
+  # migrations:
+  #   name: Alembic — forward, backward, lock safety

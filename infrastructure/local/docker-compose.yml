@@ -1,0 +1,61 @@
+# Local development infrastructure only.
+#
+#   docker compose -f infrastructure/local/docker-compose.yml up -d
+#
+# This brings up the two stateful dependencies. Application processes are run on
+# the host with `uv run` / `npm run dev` so that reloads are fast and debuggers
+# attach normally.
+#
+# NOT a production topology. See docs/ARCHITECTURE.md §10.
+
+name: risenext-voice-local
+
+services:
+  postgres:
+    # pgvector ships as an official image built on the upstream Postgres image.
+    # Pin the major version: the vector column type and index behaviour are
+    # version-sensitive, and matching production avoids "works locally" surprises.
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_USER: risenext
+      POSTGRES_PASSWORD: risenext
+      POSTGRES_DB: risenext
+      # Deterministic collation — avoids index-ordering differences between machines.
+      POSTGRES_INITDB_ARGS: "--locale=C.UTF-8 --encoding=UTF8"
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/00-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U risenext -d risenext"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    command:
+      - postgres
+      # Local-only: log slow queries so N+1s and missing indexes surface early.
+      - -c
+      - log_min_duration_statement=200
+      - -c
+      - max_connections=100
+
+  redis:
+    image: redis:8-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    # Redis holds only ephemeral coordination state (see docs/ARCHITECTURE.md §7),
+    # so appendonly is off locally. Losing it must never lose a call record — if a
+    # local restart breaks something, that is a bug worth finding.
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+
+volumes:
+  pgdata:
+  redisdata:

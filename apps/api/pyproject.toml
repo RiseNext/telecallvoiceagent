@@ -1,0 +1,36 @@
+[project]
+name = "rn-api"
+version = "0.1.0"
+description = "Platform API — the control plane. Organizations, agents, campaigns, contacts, knowledge, analytics, exports, webhooks."
+requires-python = ">=3.12,<3.14"
+# Deliberately does NOT depend on rn-orchestration: the control plane configures
+# agents and validates their definitions, it never runs a graph.
+dependencies = [
+    "rn-core",
+    "rn-domain",
+    "rn-persistence",
+    "rn-services",
+    "rn-agent",                   # tool catalogue + agent-definition validation only
+    "rn-providers[aws,clerk]",
+    "fastapi>=0.116.0",
+    "uvicorn[standard]>=0.35.0",
+    "python-multipart>=0.0.20",   # CSV/XLSX campaign uploads
+    "openpyxl>=3.1.5",            # XLSX header sniffing on upload; full parse happens in a worker
+    "taskiq>=0.12.4",             # the API enqueues, it never executes jobs
+    "taskiq-redis>=1.2.3",
+]
+
+[tool.uv.sources]
+rn-core = { workspace = true }
+rn-domain = { workspace = true }
+rn-persistence = { workspace = true }
+rn-services = { workspace = true }
+rn-agent = { workspace = true }
+rn-providers = { workspace = true }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/rn_api"]

@@ -1,0 +1,52 @@
+[project]
+name = "rn-orchestration"
+version = "0.1.0"
+description = "LangGraph/LangChain workflows for NON-realtime agent work: post-call analysis, evaluation, future multi-agent graphs"
+requires-python = ">=3.12,<3.14"
+# The ONLY package permitted to import LangChain or LangGraph.
+#
+# Nothing on a live call's critical path may depend on this package. LangGraph
+# earns its place in post-call analysis, evaluation and human-in-the-loop
+# workflows — stateful, recoverable, multi-step work where a superstep costing
+# tens of milliseconds is irrelevant. In a turn budget it is not.
+#
+# NOTE: langchain 1.3.x hard-pins langgraph>=1.2.5,<1.3.0. They move as one
+# version train and cannot be bumped independently (PROVIDER_CONSTRAINTS HC-36).
+dependencies = [
+    "rn-core",
+    "rn-domain",
+    "rn-services",
+    "rn-agent",
+    "rn-providers[openai]",
+    "langchain>=1.3.14,<1.4",
+    "langchain-core>=1.5.1,<2",
+    "langgraph>=1.2.5,<1.3",
+    "langchain-openai>=1.4.1,<2",
+    # This package owns its own checkpointer: the graphs live here, so the thing
+    # that persists their state lives here too rather than being wired in from
+    # apps/worker (which would force rn_worker to import langgraph directly and
+    # break the "only rn_orchestration" rule).
+    #
+    # It brings psycopg, which is deliberately separate from the application's
+    # SQLAlchemy/asyncpg stack — LangGraph checkpoints are framework state, not
+    # business data. Business data still goes through rn_services.
+    #
+    # Use it ONLY for post-call and HITL graphs: AsyncPostgresSaver holds an
+    # instance-level threading.Lock during async execution and collapses under
+    # concurrency (PROVIDER_CONSTRAINTS HC-37).
+    "langgraph-checkpoint-postgres>=3.1.0",
+]
+
+[tool.uv.sources]
+rn-core = { workspace = true }
+rn-domain = { workspace = true }
+rn-services = { workspace = true }
+rn-agent = { workspace = true }
+rn-providers = { workspace = true }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/rn_orchestration"]

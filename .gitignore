@@ -1,0 +1,110 @@
+# ---------------------------------------------------------------------------
+# Secrets — NEVER commit. Only .env.example belongs in git.
+# ---------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+credentials.json
+service-account*.json
+
+# ---------------------------------------------------------------------------
+# Python
+# ---------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+.venv/
+venv/
+env/
+.uv/
+.python-version.local
+
+# Test / coverage / type caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.hypothesis/
+.tox/
+.nox/
+junit*.xml
+
+# ---------------------------------------------------------------------------
+# Node / Next.js
+# ---------------------------------------------------------------------------
+node_modules/
+.next/
+out/
+.turbo/
+*.tsbuildinfo
+next-env.d.ts
+.vercel/
+.eslintcache
+
+# ---------------------------------------------------------------------------
+# Local infrastructure & data
+# ---------------------------------------------------------------------------
+.docker-data/
+pgdata/
+redisdata/
+*.sqlite
+*.sqlite3
+*.db
+
+# ---------------------------------------------------------------------------
+# Media / call artefacts — recordings and audio dumps may contain PII.
+# Never let these reach the repository.
+# ---------------------------------------------------------------------------
+recordings/
+audio-dumps/
+*.wav
+*.mp3
+*.ogg
+*.raw
+*.pcm
+!tests/**/fixtures/**/*.wav
+
+# ---------------------------------------------------------------------------
+# Exports — generated Excel/CSV reports contain customer PII.
+# ---------------------------------------------------------------------------
+exports/
+*.xlsx
+*.xls
+!docs/**/*.xlsx
+!tests/**/fixtures/**/*.xlsx
+!tests/**/fixtures/**/*.csv
+
+# ---------------------------------------------------------------------------
+# Editors / OS
+# ---------------------------------------------------------------------------
+.vscode/*
+!.vscode/settings.shared.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---------------------------------------------------------------------------
+# Logs & scratch
+# ---------------------------------------------------------------------------
+*.log
+logs/
+tmp/
+.scratch/

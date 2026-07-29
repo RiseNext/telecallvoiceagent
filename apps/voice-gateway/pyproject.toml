@@ -1,0 +1,36 @@
+[project]
+name = "rn-voice"
+version = "0.1.0"
+description = "Voice gateway — the realtime hot path. Bridges telephony media to a realtime AI session."
+requires-python = ">=3.12,<3.14"
+# Kept intentionally lean. Anything added here runs inside the audio path's process;
+# see docs/REALTIME_VOICE.md before adding a dependency.
+dependencies = [
+    "rn-core",
+    "rn-domain",
+    "rn-services",
+    "rn-agent",
+    # The `audio` extra carries numpy + soxr for the transcoder. Resampling is
+    # UNAVOIDABLE on this stack: Exotel's Voicebot applet emits raw slin PCM
+    # (s16le), never G.711, so the usual "G.711 passthrough to OpenAI Realtime"
+    # trick does not apply, and OpenAI's audio/pcm is locked to 24 kHz.
+    # See docs/research/PROVIDER_CONSTRAINTS.md HC-1/HC-4 and ADR-003.
+    "rn-providers[openai,audio]",
+    "fastapi>=0.116.0",
+    "uvicorn[standard]>=0.35.0",
+    "websockets>=15.0",
+]
+
+[tool.uv.sources]
+rn-core = { workspace = true }
+rn-domain = { workspace = true }
+rn-services = { workspace = true }
+rn-agent = { workspace = true }
+rn-providers = { workspace = true }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/rn_voice"]

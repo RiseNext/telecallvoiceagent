@@ -1,0 +1,40 @@
+[project]
+name = "rn-worker"
+version = "0.1.0"
+description = "Background workers: post-call analysis, embeddings, imports, exports, campaign dispatch, reconciliation"
+requires-python = ">=3.12,<3.14"
+dependencies = [
+    "rn-core",
+    "rn-domain",
+    "rn-persistence",
+    "rn-services",
+    "rn-agent",
+    "rn-orchestration",
+    "rn-providers[openai,aws]",
+    # Taskiq, not ARQ: ARQ is maintenance-only by maintainer statement (HC-34).
+    # Only the Redis STREAM broker acknowledges messages — PubSub/List brokers drop
+    # in-flight work on worker crash (HC-35). See ADR-005.
+    "taskiq>=0.12.4",
+    "taskiq-redis>=1.2.3",
+    # NOTE: no LangGraph dependency here on purpose. Post-call graphs and their
+    # checkpointer belong to rn-orchestration; the worker invokes them. That is
+    # what makes "only rn_orchestration imports LangGraph" literally true rather
+    # than approximately true. Enforced by an import-linter contract.
+    "openpyxl>=3.1.5",
+]
+
+[tool.uv.sources]
+rn-core = { workspace = true }
+rn-domain = { workspace = true }
+rn-persistence = { workspace = true }
+rn-services = { workspace = true }
+rn-agent = { workspace = true }
+rn-orchestration = { workspace = true }
+rn-providers = { workspace = true }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/rn_worker"]
