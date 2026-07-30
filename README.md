@@ -4,7 +4,7 @@ A multi-tenant platform for realtime AI voice agents that make and receive real 
 
 The first agent, *Aira*, is RiseNext's own sales assistant. She is **a tenant configuration running on the platform**, not the product.
 
-> **Status: Phase 0.** Architecture, repository structure, tooling and documentation exist. **No product code is implemented yet** — no schema, no migrations, no endpoints, no agent, no telephony integration. See [docs/ROADMAP.md](docs/ROADMAP.md).
+> **Status: Phase 1 complete.** The foundations are implemented and tested: `rn_core`, `rn_domain`, `rn_persistence` (21 tables, Alembic baseline, tenant-scoped repositories, Unit of Work) and the `rn_services` authorization seam. **Nothing above them exists yet** — no agent runtime, no telephony, no realtime voice, no job broker, no API endpoints, no frontend pages. 221 tests pass, including a 26-test cross-tenant security suite. See [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ---
 
@@ -114,8 +114,16 @@ Inside the voice gateway there is a second, finer layering — `runtime → sess
 
 ```bash
 uv run pytest                      # everything except live and load
-uv run pytest -m unit              # fast, no I/O
-uv run pytest -m integration       # needs Postgres and Redis
+uv run pytest -m unit              # fast, no I/O, ~0.5s
+uv run pytest -m integration       # real PostgreSQL, started automatically
+```
+
+**Integration tests need Docker but not a free port 5432.** They start an ephemeral PostgreSQL via testcontainers on a port Docker picks, so the suite never collides with — or writes to — a database you already run. Set `RN_TEST_DATABASE_URL` to point at an existing one instead; CI does exactly that with its service container.
+
+If port 5432 is already taken on your machine, the local compose stack takes an override:
+
+```bash
+POSTGRES_HOST_PORT=5433 docker compose -f infrastructure/local/docker-compose.yml up -d
 ```
 
 Markers: `unit` · `integration` · `provider` · `live` · `agent_eval` · `load`.

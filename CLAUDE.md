@@ -6,7 +6,13 @@
 
 The first agent, *Aira*, is RiseNext's own sales assistant. **She is a tenant configuration, not the product.** If you find yourself writing `if org == "risenext"` or `risenext_agent.py`, stop — that is an architecture violation.
 
-**Current state: Phase 0.** Documentation, repository structure and tooling exist. **No product code is implemented yet.** Check [docs/ROADMAP.md](docs/ROADMAP.md) before assuming anything works.
+**Current state: Phase 1 complete.** `rn_core`, `rn_domain`, `rn_persistence` (21 tables + Alembic baseline) and the `rn_services` authorization seam are implemented and tested. **Nothing above them exists** — no agent runtime, no telephony, no realtime voice, no job broker, no API endpoints, no frontend pages. Check [docs/ROADMAP.md](docs/ROADMAP.md) before assuming anything works.
+
+Three things that are deliberately absent and must stay that way until their phase:
+
+- **Row-level security.** Phase 15. Tenant isolation today is application scoping plus composite foreign keys. Do not describe the current state as having RLS.
+- **Any vector column or `document_chunks` table.** Phase 3, open decision **D-8** ([ADR-010](docs/DECISIONS/ADR-010-defer-vector-storage-layout.md)). A test asserts they do not exist — that test is the guard against D-8 being decided by accident.
+- **Clerk, or any identity vendor.** `rn_services.authorization` is provider-independent on purpose; Clerk arrives behind `rn_providers.IdentityProvider`.
 
 ---
 
@@ -113,7 +119,17 @@ npm run lint && npm run typecheck && npm run build     # frontend
 
 `addopts` pins `-m 'not live and not load'`, so a bare `pytest` **cannot** spend money — you must opt in explicitly with `-m live`. Do not remove that filter.
 
-Note: nothing in `apps/` has an entrypoint yet. Those run commands describe the intended shape; they will not work until the relevant phase is implemented.
+```bash
+# Migrations (always the DIRECT connection — a pooler cannot hold session state)
+uv run alembic upgrade head
+uv run alembic downgrade base
+uv run alembic check                      # fails if a model changed without a revision
+uv run alembic revision --autogenerate -m "what changed"
+```
+
+Note: nothing in `apps/` has an entrypoint yet. Those `uvicorn`/`taskiq` commands describe the intended shape; they will not work until the relevant phase is implemented.
+
+**Integration tests need Docker but not a free port 5432.** They start an ephemeral PostgreSQL via testcontainers, so they never collide with — or worse, write to — a database you already run. Set `RN_TEST_DATABASE_URL` to reuse an existing one instead (CI does). The local compose stack takes `POSTGRES_HOST_PORT` if 5432 is taken.
 
 ---
 
@@ -164,6 +180,10 @@ Each of these has already cost someone somewhere a day:
 - **The pooled database connection cannot hold session state.** Transaction-mode pooling means `SET LOCAL` inside a transaction, and a separate direct connection for migrations, index builds and advisory locks.
 - **Two schedulers means duplicate real phone calls.** The scheduler holds a leader lease. Never run more than one.
 - **Auth org claims are nested and prefixed differently across token versions**, and the vendor's own SDK helper reads the wrong shape. Use our claim extractor; getting this wrong is an authorization bypass.
+- **`Mapped[datetime]` defaults to a NAIVE column.** SQLAlchemy maps a bare `datetime` annotation to `TIMESTAMP WITHOUT TIME ZONE`. `Base.type_annotation_map` fixes this globally and a schema test enforces it — do not override the column type per-field and reintroduce a naive one.
+- **Postgres truncates identifiers at 63 characters, silently.** A truncated constraint name cannot be dropped by the name a migration expects, which breaks `downgrade`. The naming convention also *prepends* `ck_<table>_`, so an explicit CHECK name must be the bare suffix or you get `ck_roles_ck_roles_...`.
+- **`session.get()` bypasses tenant scoping.** It looks up by primary key alone and will happily return another tenant's row — from the identity map, without touching the database. Repositories use a filtered `SELECT` for exactly this reason.
+- **A migration must never import a live application catalog.** Permission and enum values are frozen literal snapshots in the migration. An old migration whose meaning changes because today's code changed is not a migration.
 
 ---
 

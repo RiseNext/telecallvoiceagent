@@ -22,8 +22,13 @@ services:
       POSTGRES_DB: risenext
       # Deterministic collation — avoids index-ordering differences between machines.
       POSTGRES_INITDB_ARGS: "--locale=C.UTF-8 --encoding=UTF8"
+    # Host port is overridable: developers commonly already run Postgres on 5432
+    # (another project's container, or a system install). Override with
+    #   POSTGRES_HOST_PORT=5433 docker compose -f ... up -d
+    # and point DATABASE_URL at the same port. Integration tests do not depend on
+    # this at all — they use testcontainers on an ephemeral port.
     ports:
-      - "5432:5432"
+      - "${POSTGRES_HOST_PORT:-5432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./init-db.sql:/docker-entrypoint-initdb.d/00-init.sql:ro
@@ -43,7 +48,7 @@ services:
   redis:
     image: redis:8-alpine
     ports:
-      - "6379:6379"
+      - "${REDIS_HOST_PORT:-6379}:6379"
     volumes:
       - redisdata:/data
     healthcheck:

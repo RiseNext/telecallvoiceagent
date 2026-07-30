@@ -9,7 +9,17 @@ dependencies = [
     "structlog>=25.4.0",
     "opentelemetry-api>=1.36.0",
     "opentelemetry-sdk>=1.36.0",
+    # RFC 9562 UUIDv7. Rust-backed and well-tested: a subtly wrong monotonic
+    # counter at the millisecond boundary produces duplicate or non-monotonic
+    # primary keys under load, which is invisible until it is an incident.
+    "uuid-utils>=0.11.0",
 ]
+
+[project.optional-dependencies]
+# The OTLP exporter is only needed by a process that actually exports spans.
+# Telemetry is off by default (see rn_core.telemetry), so the base install stays
+# free of grpc and its transitive tree.
+otlp = ["opentelemetry-exporter-otlp-proto-grpc>=1.36.0"]
 
 [build-system]
 requires = ["hatchling"]

@@ -45,6 +45,12 @@ jobs:
       DATABASE_URL: postgresql+asyncpg://risenext:risenext@localhost:5432/risenext_test
       DATABASE_URL_DIRECT: postgresql+asyncpg://risenext:risenext@localhost:5432/risenext_test
       REDIS_URL: redis://localhost:6379/0
+      # Integration tests use this service container instead of starting a
+      # testcontainer. Locally the variable is unset and testcontainers spins up
+      # a throwaway database on an ephemeral port, so neither environment
+      # depends on port 5432 being free.
+      RN_TEST_DATABASE_URL: postgresql+asyncpg://risenext:risenext@localhost:5432/risenext_test
+      RN_MIGRATION_DATABASE_URL: postgresql+asyncpg://risenext:risenext@localhost:5432/risenext_test
 
     steps:
       - uses: actions/checkout@v5
@@ -73,6 +79,21 @@ jobs:
       # design conversation, not a contract edit.
       - name: Architecture boundaries
         run: uv run lint-imports --verbose
+
+      # Proves the migration round-trips before any test relies on the schema.
+      # A downgrade that does not fully reverse its upgrade is only discovered
+      # when you need to roll back, which is the worst moment to discover it.
+      - name: Migration round-trip
+        run: |
+          uv run alembic upgrade head
+          uv run alembic downgrade base
+          uv run alembic upgrade head
+
+      # Fails if a model was edited without generating a revision. `--autogenerate`
+      # against an up-to-date database must produce an empty migration.
+      - name: Migrations match the models
+        run: |
+          uv run alembic check
 
       - name: Tests
         run: uv run pytest -m "not live and not load" --cov --cov-report=term-missing
