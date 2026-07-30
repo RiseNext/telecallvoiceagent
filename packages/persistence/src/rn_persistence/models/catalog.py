@@ -40,7 +40,7 @@ from rn_domain.identifiers import (
     OrganizationId,
     UserId,
 )
-from rn_domain.values import LanguageTag
+from rn_domain.values import LanguagePolicy
 from rn_persistence.base import (
     TenantOwnedBase,
     created_at_column,
@@ -126,7 +126,13 @@ class AgentVersionModel(TenantOwnedBase):
     agent_id: Mapped[uuid.UUID] = mapped_column(nullable=False)
     version_number: Mapped[int] = mapped_column(Integer, nullable=False)
     instructions: Mapped[str] = mapped_column(Text, nullable=False)
+    #: A denormalised **projection** of `language_policy -> 'allowed'`, kept as a
+    #: real array so "which agents speak Telugu?" is an indexable query instead of
+    #: a JSONB scan. Never authored independently — see the CHECK below and
+    #: `rn_domain.values.LanguagePolicy`.
     languages: Mapped[list[str]] = mapped_column(ARRAY(Text), nullable=False)
+    #: The authoritative language configuration (migration 0002).
+    language_policy: Mapped[dict[str, Any]] = json_column()
     status: Mapped[str] = mapped_column(String(32), nullable=False)
     voice_map: Mapped[dict[str, Any]] = json_column()
     turn_policy: Mapped[dict[str, Any]] = json_column()
@@ -164,6 +170,35 @@ class AgentVersionModel(TenantOwnedBase):
             "status <> 'published' OR published_at IS NOT NULL",
             name="published_at",
         ),
+        # ------------------------------------------------------------------
+        # NO DUAL SOURCE OF TRUTH FOR LANGUAGES.
+        #
+        # `languages` is a projection of `language_policy -> 'allowed'`, and this
+        # makes a disagreeing row *unstorable* rather than merely discouraged —
+        # by any writer, including raw SQL and a psql session.
+        #
+        # `IS NOT DISTINCT FROM` rather than `=`: a CHECK whose expression
+        # evaluates to NULL **passes**, so `to_jsonb(languages) = policy->'allowed'`
+        # would silently accept a policy with no `allowed` key at all. That is the
+        # exact shape the `'{}'::jsonb` column default produces.
+        # ------------------------------------------------------------------
+        CheckConstraint(
+            "to_jsonb(languages) IS NOT DISTINCT FROM language_policy -> 'allowed'",
+            name="language_policy_projects_languages",
+        ),
+        # A policy that cannot serve a call must not be storable: at least one
+        # language, `primary` present and among `allowed`, both flags real
+        # booleans. `coalesce(jsonb_typeof(...), '')` keeps this NULL-safe for the
+        # same reason as above — a missing key must fail, not evaluate to NULL.
+        CheckConstraint(
+            "cardinality(languages) >= 1"
+            " AND jsonb_typeof(language_policy -> 'allowed') = 'array'"
+            " AND language_policy ? 'primary'"
+            " AND language_policy -> 'allowed' @> jsonb_build_array(language_policy ->> 'primary')"
+            " AND coalesce(jsonb_typeof(language_policy -> 'follow_caller'), '') = 'boolean'"
+            " AND coalesce(jsonb_typeof(language_policy -> 'code_switch'), '') = 'boolean'",
+            name="language_policy_coherent",
+        ),
         Index("ix_agent_versions_agent_id", "agent_id"),
     )
 
@@ -174,7 +209,10 @@ class AgentVersionModel(TenantOwnedBase):
             agent_id=AgentId(self.agent_id),
             version_number=self.version_number,
             instructions=self.instructions,
-            languages=tuple(LanguageTag(tag) for tag in self.languages),
+            # The JSONB policy is authoritative; `languages` is its projection and
+            # is deliberately NOT read here. Reading both and reconciling them
+            # would reintroduce the ambiguity the CHECK exists to remove.
+            language_policy=LanguagePolicy.from_storage(self.language_policy),
             status=AgentVersionStatus(self.status),
             voice_map=dict(self.voice_map),
             turn_policy=dict(self.turn_policy),
@@ -196,7 +234,8 @@ class AgentVersionModel(TenantOwnedBase):
             agent_id=entity.agent_id,
             version_number=entity.version_number,
             instructions=entity.instructions,
-            languages=[str(tag) for tag in entity.languages],
+            languages=entity.language_policy.projection,
+            language_policy=entity.language_policy.to_storage(),
             status=entity.status.value,
             voice_map=dict(entity.voice_map),
             turn_policy=dict(entity.turn_policy),
@@ -219,7 +258,10 @@ class AgentVersionModel(TenantOwnedBase):
         self.published_at = entity.published_at
         if entity.published_at is None:
             self.instructions = entity.instructions
-            self.languages = [str(tag) for tag in entity.languages]
+            # Written together, always: the projection and the policy are one
+            # fact, and the CHECK rejects the row if a future edit splits them.
+            self.languages = entity.language_policy.projection
+            self.language_policy = entity.language_policy.to_storage()
             self.voice_map = dict(entity.voice_map)
             self.turn_policy = dict(entity.turn_policy)
             self.guardrail_config = dict(entity.guardrail_config)

@@ -31,7 +31,7 @@ from rn_domain.identifiers import (
     OrganizationId,
     UserId,
 )
-from rn_domain.values import LanguageTag
+from rn_domain.values import LanguagePolicy, LanguageTag
 
 __all__ = ["Agent", "AgentToolConfig", "AgentVersion", "KnowledgeBase"]
 
@@ -87,7 +87,10 @@ class AgentVersion:
     agent_id: AgentId
     version_number: int
     instructions: str
-    languages: tuple[LanguageTag, ...]
+    #: **The single source of truth for this version's languages.** Stored as
+    #: JSONB; `agent_versions.languages` is a projection of `allowed`, enforced by
+    #: a database CHECK. See `LanguagePolicy` and the `languages` property below.
+    language_policy: LanguagePolicy
     status: AgentVersionStatus = AgentVersionStatus.DRAFT
     voice_map: dict[str, Any] = field(default_factory=dict)
     turn_policy: dict[str, Any] = field(default_factory=dict)
@@ -109,10 +112,23 @@ class AgentVersion:
                 "Agent instructions are too short to define behaviour.",
                 detail={"length": len(self.instructions.strip())},
             )
-        if not self.languages:
-            raise InvariantViolation("An agent version must declare at least one language.")
+        # "at least one language" is a `LanguagePolicy` invariant, checked at its
+        # own construction. Re-checking it here would be a second place to keep
+        # right, and the policy cannot exist in a violating state anyway.
         if self.status is AgentVersionStatus.PUBLISHED and self.published_at is None:
             raise InvariantViolation("A published version must carry published_at.")
+
+    @property
+    def languages(self) -> tuple[LanguageTag, ...]:
+        """The languages this version allows.
+
+        A **read-only projection** of `language_policy.allowed`, not a field. That
+        is what makes dual source of truth impossible in the domain: there is
+        nothing to set, so nothing can disagree with the policy. The storage layer
+        writes the same projection into the `languages` array column, which a
+        database CHECK ties back to the JSONB policy.
+        """
+        return self.language_policy.allowed
 
     @property
     def is_published(self) -> bool:

@@ -1,6 +1,6 @@
 # Agent Architecture
 
-> **Status:** Phase 0 — designed, not implemented. No numbers in this document have been measured.
+> **Status:** Phase 2 — the agent core in §§1, 3, 4, 5, 6, 7 and 10 is **implemented**; §§2, 8, 9 and 11 remain **designed, not implemented**. Section 13.1 lists exactly which is which. No numbers in this document have been measured.
 > **Source of truth for:** what an agent *is*, how one live call runs, how tools are declared and executed, how instructions and guardrails are composed, how agent versions are pinned and evaluated.
 > **Companions:** [ARCHITECTURE.md](ARCHITECTURE.md) (system structure — read first) · [../PRD.md](../PRD.md) (product requirements and open decisions D-1..D-7) · [REALTIME_VOICE.md](REALTIME_VOICE.md) (frame-level audio) · [TESTING.md](TESTING.md) (evaluation mechanics) · [research/PROVIDER_CONSTRAINTS.md](research/PROVIDER_CONSTRAINTS.md) (what we actually verified) · [GLOSSARY.md](GLOSSARY.md).
 
@@ -167,13 +167,15 @@ class BookMeetingArgs(ToolArgs):
     description="Book a meeting in a slot previously returned by check_availability.",
     args=BookMeetingArgs,
     effect=Effect.EXTERNAL,  # drives idempotency requirements (§4.4)
-    permission="org:meetings:write",
+    permission="org:campaign:update",  # must be in the FROZEN catalog -- see below
     timeout=timedelta(seconds=6),
 )
 async def book_meeting(args: BookMeetingArgs, rt: ToolRuntime) -> BookMeetingResult: ...
 ```
 
-`ToolRuntime` carries `organization_id`, `call_id`, `agent_version_id`, the actor, the trace context and the service handles. **It is excluded from the generated JSON schema** `[C]` — the model never sees it and cannot populate it. This is what makes one function object safely exportable to both surfaces.
+`ToolRuntime` carries the tenant context, `call_id`, `agent_version_id`, the locale and the service handles. **It is excluded from the generated JSON schema** `[C]` — the model never sees it and cannot populate it. That exclusion is structural rather than filtered: `ToolRuntime` is the *second parameter*, not a field of `ToolArgs`, so it was never in the model whose schema is generated.
+
+> **`permission` must already be in the frozen catalog.** `roles.permissions` is constrained by a CHECK built from a literal snapshot in migration `0001`, so a value outside `rn_domain.permissions.ORG_PERMISSIONS` cannot be stored at all — `ToolRegistry` refuses the declaration at import time for exactly that reason. **Adding a tool permission is a migration**, and the tool set in §3.4 needs several that do not exist yet (meetings, callbacks, messaging). Budget one migration in the phase that introduces them.
 
 ### 3.1 Two exports, one declaration
 
@@ -206,7 +208,11 @@ This fails *silently* in the worst way: the session may accept the payload but t
 
 ### 3.4 The V1 tool set
 
-`search_knowledge` · `search_services` · `get_service_details` · `get_service_pricing` · `get_company_information` · `search_faq` · `create_lead` · `update_lead` · `save_customer_requirement` · `check_availability` · `book_meeting` · `schedule_callback` · `send_whatsapp` · `send_service_brochure` · `mark_interested` · `mark_not_interested` · `add_call_note`
+`search_knowledge` · `search_services` · `get_service_details` · `get_service_pricing` · `get_company_information` · `search_faq` · `create_lead` · `update_lead` · `save_customer_requirement` · `check_availability` · `book_meeting` · `schedule_callback` · `send_whatsapp` · `send_service_brochure` · `mark_interested` · `mark_not_interested` · `add_call_note` · `record_opt_out`
+
+That is **18**, matching [PRD §6.4](../PRD.md), [GLOSSARY](GLOSSARY.md), [TESTING](TESTING.md) and [COMPLIANCE](COMPLIANCE.md). `record_opt_out` was missing from this list until Phase 2 and is **not** interchangeable with `mark_not_interested`: the former writes a durable cross-campaign suppression, the latter records a sales-interest signal.
+
+**None of the 18 exists yet.** They arrive in Phase 3 (13 retrieval/lead/company tools), Phase 9 (`record_opt_out`, with the suppression write and the pre-dial gate) and Phase 10 (`check_availability`, `book_meeting`, `schedule_callback`, `send_whatsapp`). Phase 2 ships two READ-only built-ins over knowledge-base metadata — `list_knowledge_bases` and `find_knowledge_base` — which exist to exercise the pipeline, not to be part of this set.
 
 Two design rules visible in that list. **Retrieval and authority are separate tools:** `search_knowledge` answers *"what do you do?"*; `get_service_pricing` answers *"what does it cost?"*. Knowledge is fuzzy and quotable; pricing is authoritative and exact, and it must never come out of a vector index. **Availability is a read before it is a write:** `check_availability` returns opaque slot ids, and `book_meeting` accepts only an id that was returned. The model cannot construct a slot because it never sees a slot's internals.
 
@@ -358,12 +364,30 @@ The consistent pattern: where a guardrail can be made *structural* (permissions,
 Per-agent configuration, never a global constant, never inferred from a phone number's country code:
 
 ```python
-class LanguagePolicy(BaseModel):
-    primary: str  # BCP-47-ish tag, e.g. "en-IN"
-    allowed: tuple[str, ...]  # e.g. ("en-IN", "hi-IN", "te-IN")
+# rn_domain.values -- IMPLEMENTED (migration 0002)
+@dataclass(frozen=True, slots=True)
+class LanguagePolicy:
+    primary: LanguageTag  # BCP-47-ish, e.g. "en" or "hi-IN"
+    allowed: tuple[LanguageTag, ...]
     follow_caller: bool = True  # switch to the caller's language mid-call
     code_switch: bool = True  # allow mixing within one utterance
 ```
+
+**Where it is stored, and why there are two columns.** `agent_versions.language_policy`
+is JSONB and is authoritative. `agent_versions.languages` survives as a denormalised
+**projection** of `allowed`, because "which agents speak Telugu?" should be an indexable
+array query rather than a JSONB scan. They cannot disagree:
+
+* in the domain there is only one field — `AgentVersion.languages` is a read-only
+  property over `language_policy.allowed`, so there is nothing to set inconsistently;
+* in the database a CHECK asserts
+  `to_jsonb(languages) IS NOT DISTINCT FROM language_policy -> 'allowed'`, so a
+  disagreeing row cannot be written by *any* writer, including raw SQL.
+
+A second CHECK requires the policy to be coherent — at least one language, `primary`
+present and among `allowed`, both flags real booleans. `IS NOT DISTINCT FROM` rather
+than `=` because a CHECK expression evaluating to NULL **passes**, which is exactly what
+the `'{}'::jsonb` column default would produce.
 
 Expected behaviour, from PRD §5.2: a call has **no single language**. *"Website toh already hai, social media management chahiye."* and *"App development ki approximately entha avutundi?"* are the normal case, not the edge case. The agent must not force the caller into one language, and must carry context across a switch.
 
@@ -555,6 +579,25 @@ Evaluation runs in `rn_orchestration` on the worker, using the same `rn_agent` t
 ---
 
 ## 13. Where to look next
+
+### 13.1 Implementation status, as of Phase 2
+
+| Section | State |
+|---|---|
+| §1 Definition vs session, `AgentSnapshot` | **Implemented.** Frozen, deterministic, content-hashed. The per-process LRU of §1.1 is **not** built — there is no live-call path to measure, and immutable-on-publish is the property that will make it correct when there is. |
+| §2 Session lifecycle | **Designed only.** No audio, no telephony, no provider session. Phases 4-5. |
+| §3 Tool registry, flat schema export | **Implemented**, including the HC-19 flat shape and its regression test. The LangChain export (§3.1) is **not** built — it belongs to `rn_orchestration`, Phase 11. The §3.4 tool set is **not** built (see the note there). |
+| §4 Tool execution pipeline | **Stages 1, 2, 3 and 5 implemented.** Stage 4 (idempotency, rate limits, compliance gates) is **not** — it applies to `EXTERNAL`-effect tools, none of which exist; the registry refuses to declare one until it does. |
+| §5 Instruction layers | **Implemented.** Layers 1, 3 and 4; layer 2 has a parameter and no column — organization-level instructions arrive with organization settings. |
+| §6 Guardrails | **AI disclosure and opt-out recognition implemented** as code matchers, en/hi/te, native script and romanised. Recognition is not enforcement: the durable opt-out write is Phase 9. The remaining rows are structural properties of later phases. |
+| §7 Multilingual | **`LanguagePolicy` implemented** and versioned. `voice_map` is parsed and validated; nothing speaks. |
+| §8 LangChain/LangGraph placement | **Designed only.** `rn_orchestration` is empty. |
+| §9 Provider abstraction | **The text-mode `LLMProvider` seam is implemented**, with a scripted fake and no vendor adapter. `VoiceSession` is **not** — Phases 4-5. |
+| §10 Versioning | **Implemented.** Immutable on publish, enforced by a database trigger that migration `0002` extended to cover `language_policy`. |
+| §11 Evaluation | **Tier 1 implemented** — scripted, deterministic, offline, gating compliance/opt-out/injection. The judged tier, `eval_run` persistence and version comparison are **not**; they belong to `rn_orchestration`, Phase 11. |
+
+Nothing in this document has been measured. No latency, throughput, concurrency or
+language-quality figure here is evidence.
 
 | Question | Document |
 |---|---|

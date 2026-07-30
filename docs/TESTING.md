@@ -79,14 +79,24 @@ This was verified rather than assumed: a temporary `live`-marked test was added,
 
 | Location | Contains |
 |---|---|
-| `packages/<pkg>/tests/` | `unit` and `provider` tests for that package. Co-located so a package can be reasoned about alone. |
+| `tests/unit/` | `unit` tests for every package. **Centralised, not per-package** — see the note below. |
 | `apps/<app>/tests/` | app-level wiring: route auth, dependency graph, gateway session lifecycle. |
 | `tests/contract/` | the conformance suites of §3.4 — one suite, run against fake and (opt-in) real. |
 | `tests/e2e/` | cross-plane flows: campaign → dial → bridge → tool → finalize → outbox → worker → dashboard read. All providers faked. |
-| `tests/agent_eval/scenarios/` | the scenario catalogue as data (YAML), plus the runner. |
+| `tests/agent_eval/` | the scenario catalogue as data (`scenarios.yaml`), plus the runner. |
 | `tests/load/` | load scenarios and the synthetic Exotel client. |
 | `tests/tapes/` | recorded frame/event tapes (§3.5). |
 | `tests/golden/` | golden audio and golden structured-output fixtures. |
+
+**Why unit tests are centralised rather than co-located.** This document originally
+prescribed `packages/<pkg>/tests/`, co-located so a package could be reasoned about
+alone. What shipped is `tests/unit/` and `tests/integration/`, and that is now the rule.
+The reason is that the tests which matter most here are not per-package: tenant
+isolation spans domain, persistence and services; the role-ownership invariant spans a
+database trigger and an authorization function; framework independence is a property of
+one package asserted by reading another's source. Filing those under a single package
+would have been a fiction. `apps/<app>/tests/` remains co-located, because app wiring
+genuinely is app-local.
 
 `pytest-randomly` is in the dev group, so **test order is randomised on every run**. Any test that depends on another test's side effects will fail eventually and confusingly. Build state in fixtures, not in module import order.
 
@@ -100,6 +110,7 @@ This is the load-bearing section. Everything else in this document assumes it.
 
 ```
 packages/providers/src/rn_providers/fakes/
+    llm.py            FakeLLMProvider      IMPLEMENTED (Phase 2)
     telephony.py      FakeTelephonyProvider
     realtime.py       FakeRealtimeProvider
     stt.py  tts.py    FakeSTTProvider / FakeTTSProvider
@@ -108,6 +119,13 @@ packages/providers/src/rn_providers/fakes/
     identity.py       FakeIdentityProvider (Clerk claim shapes)
     tapes.py          tape loading + schema
 ```
+
+Only `llm.py` exists today; each of the others arrives with the seam it fakes.
+`FakeLLMProvider` replays a flat tape — the *n*-th `complete()` returns the *n*-th
+scripted turn — and does two things a bland fake would not: an **exhausted tape raises**
+rather than returning a default, so an extra provider round trip per turn cannot pass
+silently; and a scripted turn may **assert what it expects to see** in the conversation,
+so a reordered loop fails instead of producing the same scripted output.
 
 Not `tests/fakes/`. Three reasons, in order of importance:
 
@@ -239,7 +257,7 @@ These are cheap, fast, and catch the bugs that are most expensive in production 
 
 **Time.** Every date-resolution test runs under `freezegun` with an explicit IST reference instant, and `ruff`'s `DTZ` rules ban naive datetimes at lint time. Cases: "Friday evening" resolved on a Thursday, on a Friday morning, on a Friday at 8 PM (past — must roll forward and the agent must confirm); "tomorrow" across midnight; "next month" on the 31st; "day after" in Hindi and Telugu; a request that is ambiguous, which must produce a *confirmation request*, not a guess. Callback resolution and calling-window evaluation share the same clock seam so they cannot disagree.
 
-**Tool argument validation (`rn_agent`).** For every tool in the registry: valid args round-trip; missing required field rejected; wrong type rejected; extra field rejected (`strict=True`); an injected `organization_id`, `call_id` or `agent_version_id` in model output is **ignored** and raises a security event; enum values outside the catalogue rejected. Plus one meta-test that iterates the registry and fails if any tool lacks a schema, a description, or a permission binding — so a new tool cannot be added untested. The V1 registry holds **18 tools**, and the meta-test asserts that count so a silent addition or removal is visible in a diff. `record_opt_out` is one of the 18 and is **not** interchangeable with `mark_not_interested`: the former writes a durable, cross-campaign suppression, the latter records a sales-interest signal, and there is an explicit test that asserting one does not produce the effect of the other.
+**Tool argument validation (`rn_agent`).** For every tool in the registry: valid args round-trip; missing required field rejected; wrong type rejected; extra field rejected (`strict=True`); an injected `organization_id`, `call_id` or `agent_version_id` in model output is **ignored** and raises a security event; enum values outside the catalogue rejected. Plus one meta-test that iterates the registry and fails if any tool lacks a schema, a description, or a permission binding — so a new tool cannot be added untested. The V1 registry will hold **18 tools**, and the meta-test asserts that count so a silent addition or removal is visible in a diff — **from Phase 10**, when the last of them lands. Asserting 18 earlier would fail by construction: the tools arrive across Phases 3, 9 and 10, and each needs a permission that does not exist in the frozen catalog yet. Phase 2 asserts the count it actually has (its two READ-only built-ins) so that an unplanned third tool is still visible in a diff, and runs the schema/description/permission meta-test over whatever is registered. `record_opt_out` is one of the 18 and is **not** interchangeable with `mark_not_interested`: the former writes a durable, cross-campaign suppression, the latter records a sales-interest signal, and there is an explicit test that asserting one does not produce the effect of the other.
 
 **Agent state transitions.** The session state machine is owned by [AGENT_ARCHITECTURE.md](AGENT_ARCHITECTURE.md) §2, and the tests use its names verbatim: the main path is **Resolving → Opening → Greeting → Listening → Thinking → Speaking → ToolCalling → WrapUp → Finalizing**, plus the three off-path states **Degrading**, **Rebuilding** and **Failing**. Encode it as an explicit table of legal transitions, with a test asserting that every illegal transition raises rather than silently no-ops. Terminal states are absorbing. `Finalizing` must be reachable from every state, including `ToolCalling` (the caller can hang up mid-tool — PRD §6.2).
 

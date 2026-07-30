@@ -25,6 +25,8 @@ from rn_domain.enums import CampaignContactStatus, ConsentStatus
 from rn_domain.tenancy import TenantContext
 from rn_persistence.models import (
     AgentModel,
+    AgentToolConfigModel,
+    AgentVersionKnowledgeBaseModel,
     AgentVersionModel,
     AuditLogModel,
     CallEventModel,
@@ -55,6 +57,8 @@ __all__ = [
     "DEFAULT_PAGE_SIZE",
     "MAX_PAGE_SIZE",
     "AgentRepository",
+    "AgentToolConfigRepository",
+    "AgentVersionKnowledgeBaseRepository",
     "AgentVersionRepository",
     "AuditLogRepository",
     "CallEventRepository",
@@ -119,8 +123,59 @@ class AgentVersionRepository(TenantScopedRepository[AgentVersionModel]):
         return 1 if latest is None else latest.version_number + 1
 
 
+class AgentToolConfigRepository(TenantScopedRepository[AgentToolConfigModel]):
+    """Which tools are enabled on which agent version.
+
+    Enablement is per *version*, not per agent: turning on a tool that can message
+    a customer changes what the agent can do to the world, and that must be pinned
+    to the call the same way the prompt is.
+    """
+
+    model = AgentToolConfigModel
+
+    async def list_for_version(self, agent_version_id: uuid.UUID) -> Sequence[AgentToolConfigModel]:
+        """Every tool row for one version, enabled or not.
+
+        Returns disabled rows too. The caller filters, because "this tool exists but
+        is switched off" is a different fact from "this tool was never configured",
+        and a dashboard needs to render the difference.
+        """
+        result = await self._session.execute(
+            self._scoped()
+            .where(AgentToolConfigModel.agent_version_id == agent_version_id)
+            .order_by(AgentToolConfigModel.tool_name)
+        )
+        return list(result.scalars().all())
+
+
+class AgentVersionKnowledgeBaseRepository(TenantScopedRepository[AgentVersionKnowledgeBaseModel]):
+    """Which knowledge bases an agent version is bound to."""
+
+    model = AgentVersionKnowledgeBaseModel
+
+    async def list_for_version(
+        self, agent_version_id: uuid.UUID
+    ) -> Sequence[AgentVersionKnowledgeBaseModel]:
+        result = await self._session.execute(
+            self._scoped()
+            .where(AgentVersionKnowledgeBaseModel.agent_version_id == agent_version_id)
+            .order_by(AgentVersionKnowledgeBaseModel.knowledge_base_id)
+        )
+        return list(result.scalars().all())
+
+
 class KnowledgeBaseRepository(TenantScopedRepository[KnowledgeBaseModel]):
     model = KnowledgeBaseModel
+
+    async def find_by_name(self, name: str) -> KnowledgeBaseModel | None:
+        """One knowledge base by exact name, within this tenant.
+
+        Exact rather than fuzzy: `uq_knowledge_bases_organization_id_name` makes
+        this a unique index hit, and a tool that resolved names loosely would let a
+        caller reach a knowledge base the agent was not asked about.
+        """
+        result = await self._session.execute(self._scoped().where(KnowledgeBaseModel.name == name))
+        return result.scalar_one_or_none()
 
 
 class ContactRepository(TenantScopedRepository[ContactModel]):
