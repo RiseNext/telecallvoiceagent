@@ -1,6 +1,7 @@
 # Data Model
 
-> **Status:** Phase 0 — designed, **not implemented**. No migration exists yet; `packages/persistence` contains only a package skeleton.
+> **Status:** **Phase 1 implemented, in part.** 21 of the 34 tables below exist in migration `0001`; the rest belong to later phases and are marked as such. `packages/persistence` holds the models, repositories and Unit of Work.
+> **Not implemented:** row-level security (Phase 15 — see §4.2), the vector column and `document_chunks` (Phase 3, open decision **D-8** — see §6), and every table in the *Knowledge documents*, *Business catalog*, *Call outcomes* and *Platform integrations* groups.
 > **Scope:** the durable schema — entities, tenancy, indexing, lifecycle, retention and migration safety. It does **not** cover Redis keys (coordination only, see [ARCHITECTURE.md](ARCHITECTURE.md) §7) or API response shapes (never the same thing as a table).
 > **Companions:** [../PRD.md](../PRD.md) (what the entities are *for*) · [ARCHITECTURE.md](ARCHITECTURE.md) (planes, layers, outbox) · [research/PROVIDER_CONSTRAINTS.md](research/PROVIDER_CONSTRAINTS.md) (the verified provider facts several decisions below depend on).
 > **Honesty:** every number in this document is a **target**, a **budget**, or a **projection from the PRD's targets**. Nothing here has been measured. Provider facts are cited by their `HC-n` id from PROVIDER_CONSTRAINTS; anything not cited there is our own design decision and is labelled as such.
@@ -11,7 +12,11 @@
 
 These apply to every table. They are boring on purpose — the interesting decisions come later, and they are only affordable because the basics are uniform.
 
-**Identifiers.** Every table has a UUID primary key generated **in the application**, in `rn_core.ids`, not by the database. Two reasons: the domain layer needs an entity's identity before anything is flushed (a `Call` aggregate builds its outbox event referencing its own id), and generating server-side keeps ids stable across the retry of a job that already partially ran. We use **UUIDv7** (time-ordered) for append-heavy tables — `calls`, `call_events`, `transcript_turns`, `call_tool_executions`, `usage_records`, `audit_logs`, `outbox` — because random v4 keys scatter B-tree inserts across the whole index and turn a write-heavy table into a page-split machine. Config tables can use either; use v7 everywhere for one code path. Python 3.12's stdlib has no `uuid7`, so `rn_core.ids.new_id()` implements it (monotonic counter within the millisecond) with its own tests. Postgres 18 has a native `uuidv7()`, but we do not depend on it — the PG major version is downstream of **D-1** and generation stays in one place regardless. Columns keep a `DEFAULT gen_random_uuid()` purely as a safety net for rows inserted by hand.
+**Identifiers.** Every table has a UUID primary key generated **in the application**, in `rn_core.ids`, not by the database. Two reasons: the domain layer needs an entity's identity before anything is flushed (a `Call` aggregate builds its outbox event referencing its own id), and generating server-side keeps ids stable across the retry of a job that already partially ran. We use **UUIDv7** (time-ordered) everywhere — one code path — because random v4 keys scatter B-tree inserts across the whole index and turn a write-heavy table like `calls` or `outbox` into a page-split machine.
+
+Python 3.12's stdlib has no `uuid7`, so `rn_core.ids.new_id()` delegates to the **`uuid-utils`** library (Rust, RFC 9562), which returns a genuine `uuid.UUID`. *Implemented as of Phase 1 — an earlier draft of this document said we would write the generator ourselves; we do not. Getting the millisecond-boundary monotonic counter right is fiddly, and a subtly wrong implementation produces duplicate or non-monotonic keys under load, which is invisible until it is an incident.* Postgres 18 has a native `uuidv7()`, but we do not depend on it — the PG major version is downstream of **D-1** and generation stays in one place regardless. Columns keep a `DEFAULT gen_random_uuid()` purely as a safety net for rows inserted by hand.
+
+**v7 ordering is not a timestamp.** Ids sort in generation order, which is what keeps inserts local, and that is all it is used for. No business logic derives a time from an id: temporal semantics always come from an explicit `timestamptz` column. The outbox relay, for example, claims work ordered by `(created_at, id)` — the timestamp carries the meaning and the id is only a deterministic tiebreak.
 
 *No sequential integer ids anywhere.* They leak tenant volume, they make multi-tenant merges painful, and they invite the "id in the URL is guessable" class of bug.
 
@@ -51,7 +56,9 @@ Everything else is a column. The rule that keeps this honest: **nothing a dashbo
 
 ### 2.1 What we merged, and why
 
-**`roles` absorbs `role_permissions`.** A role carries `permissions text[]` directly. The permission *catalog* is a frozen list of `org:<feature>:<action>` strings in `rn_domain`, validated by a CHECK against a small reference table — not a table of its own. We never ask "which roles have permission X" at scale; we always load one role and read the whole set. A join table would be three tables to answer a question we ask once per request from cache.
+**`roles` absorbs `role_permissions`.** A role carries `permissions text[]` directly. The permission *catalog* is a frozen list of `org:<feature>:<action>` strings in `rn_domain`, validated by a **CHECK against a literal array** — not a table of its own.
+
+*Corrected in Phase 1: an earlier draft said "a CHECK against a small reference table", which Postgres 17 cannot do — a CHECK may not reference another table, and array-element foreign keys do not exist. The implemented form is `CHECK (permissions <@ ARRAY[...]::text[])`, where the array is a **frozen snapshot** written into migration `0001`. Migrations never import the live catalog: an old migration whose meaning changes because today's code changed is not a migration. Adding a permission therefore needs a new migration, and `tests/integration/test_schema_invariants.py` fails if the application catalog drifts from the constraint.* We never ask "which roles have permission X" at scale; we always load one role and read the whole set. A join table would be three tables to answer a question we ask once per request from cache.
 This is also forced by HC-30/HC-31: Clerk system permissions never reach the backend, so authorization is entirely ours, and Clerk's ≤10 custom-role ceiling means per-tenant roles must live in our DB anyway (`roles.organization_id` nullable — `NULL` = platform catalog row). See **D-7**.
 
 **`transcripts` is deleted; only `transcript_turns` exists.** A transcript header row is 1:1 with a call and holds nothing the call doesn't already hold. Storing an assembled `full_text` alongside the turns creates two copies of the same words, which then have to be redacted twice and drift the first time assembly changes. Full text is a **derived artifact**: rendered on demand for the UI, and written to object storage as part of an export job. Search runs over `transcript_turns` (§9), which is better anyway — you want to highlight the turn that matched, not a blob.
@@ -188,7 +195,13 @@ CREATE TABLE transcript_turns (
 
 **Layer 1 — repositories.** There is no unscoped read path. `rn_persistence` exposes `TenantScopedRepository`, constructed with an `OrganizationId` taken from the verified `AuthContext` (or, on a call, from the server-side session context — never from a request body, never from model output; CLAUDE.md rules 3 and 4). It has no method that accepts a bare filter. Platform-global access lives in a separately named `PlatformRepository` that is only reachable from super-admin services, so a grep for it is a security review.
 
-**Layer 2 — RLS, as defence in depth.** Every unit of work begins its transaction with `SET LOCAL app.organization_id = '<uuid>'` and every tenant-owned table has:
+**Layer 2 — RLS, as defence in depth. NOT IMPLEMENTED IN PHASE 1.**
+
+> Row-level security lands in **Phase 15** (multi-tenant hardening and adversarial verification), not with the baseline schema. Phase 1 ships Layer 1 and Layer 3 only. Nothing in the current codebase provides RLS, and no test covers it — do not read the tenant-isolation suite as evidence that it exists.
+>
+> Phase 1's isolation is application scoping *plus* a structural defence the original design did not spell out: **composite foreign keys**. `(organization_id, parent_id) → parent(organization_id, id)` makes cross-tenant parentage impossible in the database regardless of what the application does, and it is enforced today. That is weaker than RLS against a bug in a repository, and stronger than nothing.
+
+The design below is what Phase 15 will implement:
 
 ```sql
 -- ILLUSTRATIVE
@@ -201,6 +214,22 @@ CREATE POLICY calls_tenant_isolation ON calls
 `SET LOCAL` inside an explicit transaction is the *only* form that works — Neon's PgBouncer runs `pool_mode=transaction`, where session-level `SET` is unsupported (HC-26). Migrations and the scheduler's advisory lock use the second, **direct** DSN. The application role does not have `BYPASSRLS`; the migration role is separate and does.
 
 We set the GUC ourselves rather than using a JWT-derived RLS integration, because the tenant key in our schema is **our** UUID, not `clerk_org_id` (that is a unique column on `organizations`, never the PK — telephony entities, CDRs, billing ledgers and retained recordings must outlive an auth-provider migration).
+
+#### The one relationship a composite FK cannot express: `organization_members.role_id`
+
+A membership may reference a role only if the role is a **platform catalog role** (`roles.organization_id IS NULL`, assignable by anyone) or belongs to the **same organization** as the membership. Otherwise organization B could decide what organization A's members may do.
+
+No declarative constraint covers both cases, because `roles.organization_id` is nullable:
+
+| Approach | Why it fails |
+|---|---|
+| Composite FK, `MATCH SIMPLE` (the default) | Skipped entirely whenever a referencing column is NULL, so a forged NULL bypasses it |
+| Composite FK, `MATCH FULL` | Rejects NULLs outright, making every platform catalog role unassignable |
+| Split into `platform_roles` + `organization_roles` | Expresses it declaratively, at the cost of two tables and a branch in every role read |
+
+So it is enforced by a **trigger** — `organization_members_role_scope`, `BEFORE INSERT OR UPDATE` — plus a companion trigger making `roles.organization_id` immutable, which closes the "assign legally, then re-home the role" path that a write-time check alone would miss. A trigger states the rule once, applies to every writer including raw SQL, and costs nothing on a table written only at invite/remove time.
+
+`build_tenant_context` **also** refuses a cross-tenant role at read time. That is not redundancy for its own sake: authorization integrity must not depend on the database having been correct, so a row that predates the trigger, arrives through a restore, or is written with `session_replication_role = replica` still cannot produce an authorized context. `tests/integration/test_role_ownership.py` proves this by disabling the trigger and asserting the read boundary still holds.
 
 **Layer 3 — tests that fail on schema drift.** Two, both cheap and both mandatory:
 

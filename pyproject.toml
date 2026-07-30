@@ -101,8 +101,19 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"**/tests/**" = ["S", "ARG", "PLR2004"]
-"tests/**" = ["S", "ARG", "PLR2004"]
+# Test files have different idioms and different risks:
+#   S        - asserts and hardcoded test values are the point
+#   ARG      - pytest fixtures are frequently requested for their side effect
+#   PLR2004  - a literal in an assertion is clearer than a named constant
+#   PLC0415  - function-local imports keep a test's dependencies next to it
+#   PLW0603  - a module-level counter for unique test data is fine
+#   PTH      - os.path is adequate for locating fixtures
+"**/tests/**" = ["S", "ARG", "PLR2004", "PLC0415", "PLW0603", "PTH"]
+"tests/**" = ["S", "ARG", "PLR2004", "PLC0415", "PLW0603", "PTH"]
+# Migrations are generated, then curated. They are a historical record: once
+# merged their content is fixed, so style rules that would prompt a rewrite of
+# an applied migration are counterproductive.
+"**/migrations/versions/*.py" = ["E501", "PLC0415"]
 
 [tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "parents"
@@ -137,6 +148,20 @@ exclude = ["(^|/)migrations/versions/"]
 [[tool.mypy.overrides]]
 module = ["tests.*", "*.tests.*"]
 disallow_untyped_defs = false
+
+# Optional extras that are not installed in the default dev environment. The
+# import sites are guarded at runtime and raise a typed ConfigurationError when
+# the extra is missing, so an unresolvable stub here is expected rather than a gap.
+[[tool.mypy.overrides]]
+module = ["opentelemetry.exporter.*"]
+ignore_missing_imports = true
+
+# asyncpg ships no py.typed marker. It is used directly only in a migration test
+# that needs a raw connection outside SQLAlchemy; application code goes through
+# SQLAlchemy, which is fully typed.
+[[tool.mypy.overrides]]
+module = ["asyncpg.*", "testcontainers.*"]
+ignore_missing_imports = true
 
 # ===========================================================================
 # Pytest

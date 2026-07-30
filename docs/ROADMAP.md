@@ -9,26 +9,42 @@
 
 ## Current Phase
 
-**Phase 0 — complete. Phase 1 — not started.**
+**Phase 0 — complete. Phase 1 — complete (see caveats). Phase 2 — not started.**
 
-The repository is scaffolded and the toolchain is real. **No product code exists.** To be specific about what "no product code" means, because it is easy to be misled by a well-organised tree:
+The foundations exist and are exercised by tests against a real PostgreSQL. To be specific about what does and does not exist, because a well-organised tree is easy to over-read:
 
 | Thing | State |
 |---|---|
-| Python source files in `apps/` and `packages/` | **13 empty `__init__.py` files.** Nothing else. (Ten package roots, plus `rn_voice.media` / `.session` / `.runtime` — module markers that exist so the permanent media-transport boundary in [ADR-009](DECISIONS/ADR-009-orchestration-boundary-for-live-sessions.md) is enforceable by `import-linter`, which requires a module to exist before it can constrain it.) |
-| Database schema, Alembic migrations | none |
-| API endpoints | none |
-| Agent definition, tool registry, guardrails | none |
-| Telephony or realtime provider adapters | none |
-| Job broker, scheduler, outbox relay | none |
-| Frontend pages | none |
-| CI workflow file, Dockerfile, `docker-compose.yml` | **These exist and are real.** `.github/workflows/ci.yml` (python job with Postgres + Redis services, plus a web job), `infrastructure/local/docker-compose.yml` (`pgvector/pgvector:pg17`, `redis:8-alpine`), `infrastructure/local/init-db.sql` (`vector`, `pgcrypto`, `pg_trgm` + a test database), `infrastructure/docker/Dockerfile` (multi-stage, `--target api\|voice\|worker`). They build and run nothing product-shaped — there is no application to put in them yet. |
-| Repository-level tests and docs | `tests/test_workspace_layout.py` — **15 passing** structural and secret-scanning tests. `README.md`, `.env.example`, and a `README.md` in every package and app. |
+| `rn_core` | **Implemented.** Typed settings with fail-fast environment validation, UUIDv7 ids, UTC-only clock helpers, error taxonomy, centralised redaction, correlation contextvars, structured logging, OTel bootstrap (off by default). |
+| `rn_domain` | **Implemented.** 20 entities in 6 modules, value objects, enums, the permission catalog, `TenantContext`/`PlatformContext`, domain events, pure policies. Purity verified at runtime as well as by contract. |
+| `rn_persistence` | **Implemented.** 21 tables, ORM models with explicit domain mappers, tenant-scoped repositories, Unit of Work, Alembic baseline `0001`. |
+| `rn_services` | **Authorization seam only.** `Principal`, membership-derived `build_tenant_context`, resource policies. No business use cases yet — those belong to the phases that need them. |
+| Database schema, Alembic migration | **21 tables**, round-trip verified (`upgrade → downgrade → upgrade`) on real PostgreSQL. `alembic check` clean. |
+| Row-level security | **Not implemented — Phase 15.** Isolation today is application scoping plus composite foreign keys. Do not read the tenant-isolation suite as covering RLS. |
+| Vector column, `document_chunks` | **Deliberately absent.** Open decision **D-8**, Phase 3 ([ADR-010](DECISIONS/ADR-010-defer-vector-storage-layout.md)). A test asserts they do not exist. |
+| API endpoints, agent runtime, telephony, job broker, scheduler, outbox relay, frontend pages | none |
+| Tests | **221 passing** — 147 unit, 74 integration against ephemeral PostgreSQL, including a 26-test cross-tenant security suite. |
 | Anything measured — latency, throughput, concurrency, cost | **nothing** |
 
-Every number in this repository is a target or a budget. We have measured nothing.
+Every number in this repository is still a target or a budget. We have measured no performance characteristic of anything.
 
 ## Completed
+
+**Phase 1 — Foundations: core, domain, persistence, tenancy, authorization.**
+
+- **`rn_core`** — settings validated at startup and refused when unsafe for a deployed environment; UUIDv7 via the `uuid-utils` library rather than hand-rolled; `timestamptz`-only time helpers; a typed error taxonomy whose `detail` never serialises to a client; centralised redaction; correlation contextvars; structured logging; an OTel bootstrap that is off by default and exports to our own collector.
+- **`rn_domain`** — 20 entities with enforced invariants and explicit state machines (call transitions, campaign dispatch, agent-version publication), value objects (`PhoneNumber` masks itself in `str`/`repr`), the 48-permission catalog, `TenantContext`/`PlatformContext`, domain events with a PII-key guard, and the pure pre-dial compliance gate.
+- **`rn_persistence`** — 21 tables; ORM models separate from domain entities with explicit mappers; `TenantOwnedBase` puts the tenant key in the *type system* so the scoping predicate is type-checked; tenant-scoped repositories with no unscoped read path; a Unit of Work that is the only thing that commits, with driver exceptions translated into our taxonomy; Alembic baseline `0001`.
+- **`rn_services`** — the authorization seam. `Principal` (provider-independent, no Clerk), `build_tenant_context` deriving authority from a **verified membership row** rather than a requested id, and resource policies.
+- **Tests: 221 passing.** 147 unit (0.5 s) and 74 integration against an ephemeral PostgreSQL started by testcontainers on a random port — so the suite never touches a developer's own database.
+- **Migration round-trip verified** on real PostgreSQL: `upgrade head → downgrade base → upgrade head`, asserting the trigger, the CHECK constraints and the trigger function are all created *and* removed. `alembic check` reports no model/migration drift.
+
+**Four defects were found by writing the tests, not by review:**
+
+1. **Every `datetime` column was `TIMESTAMP WITHOUT TIME ZONE`.** SQLAlchemy's default for a bare `Mapped[datetime]` is naive, silently violating "timestamptz, always". Fixed systemically with `type_annotation_map` on the declarative base; a schema test now asserts no naive timestamp column can exist. 43 columns were affected.
+2. **A constraint name exceeded Postgres' 63-character identifier limit**, which truncates silently and breaks `downgrade` — a constraint cannot be dropped by a name that was mangled on creation. A test now asserts the limit.
+3. **The logging pipeline was configured but never exercised.** `add_logger_name` requires a stdlib logger; the print-based factory made every real `logger.warning()` raise. Every earlier test called the redaction *function* rather than emitting a log line. Fixed, and `tests/unit/test_logging.py` now asserts on captured output.
+4. **`organization_members.role_id` had no constraint tying the role to the member's organization** — found by adversarial review. A membership in org A could reference org B's custom role, letting B decide A's permissions. The composite FK used elsewhere cannot apply because `roles.organization_id` is nullable, so `build_tenant_context` now refuses a cross-tenant role, with a test.
 
 **Phase 0 — Architecture and repository initialization.**
 
@@ -52,15 +68,15 @@ Every number in this repository is a target or a budget. We have measured nothin
 
 ## In Progress
 
-Nothing. Phase 0 closed; Phase 1 not started.
+Nothing. Phase 1 closed; Phase 2 not started.
 
 ## Next
 
-**Phase 1 — Foundations: core, data model, tenancy, migrations.** See [the phase table](#phase-1--foundations-core-data-model-tenancy-migrations).
+**Phase 2 — Agent core: definitions, versioning, tool registry, guardrails.**
 
-This is a deliberate change from the originally sketched sequence, which put persistence at Phase 8 and multi-tenancy at Phase 12. Both are wrong for this system — see [Why the order changed](#why-the-order-changed).
+Phase 1 delivered the schema half of agent versioning (immutable `agent_versions`, enforced by a database trigger, with `calls.agent_version_id` pinning). Phase 2 builds the runtime half in `rn_agent`: resolving a version into a snapshot, composing layered instructions, the typed tool registry, and the guardrails — all framework-free, and with no audio anywhere.
 
-Phase 1 is **not blocked by D-1**, because the schema is portable Postgres + pgvector and development runs against local Docker Postgres. What D-1 blocks is *provisioning the managed database*. **Do not create the Neon project until D-1 is answered** — the region is immutable at project creation ([PROVIDER_CONSTRAINTS](research/PROVIDER_CONSTRAINTS.md) HC-27) and Neon has no India region.
+Still **not blocked by D-1**: development runs against local Docker PostgreSQL, and the schema is portable. What D-1 blocks is *provisioning the managed database*. **Do not create the Neon project until D-1 is answered** — the region is immutable at project creation ([PROVIDER_CONSTRAINTS](research/PROVIDER_CONSTRAINTS.md) HC-27) and Neon has no India region.
 
 ## Blocked
 
@@ -176,7 +192,7 @@ Deliverables and evidence are listed under [Completed](#completed). Done when `u
 **Deliverables**
 
 - `rn_core`: typed settings (two DSNs — pooled and direct, per HC-26), typed error hierarchy, UUIDv7-style ID generation, timezone-aware time helpers (IST-first), structured logging with a **redaction filter that never emits a full phone number**, OTel bootstrap.
-- `rn_domain`: organizations, agents, agent versions, calls, contacts, consent records, leads, knowledge bases/chunks, tool executions, campaigns — as pure entities, value objects and policies. No I/O; the `Domain is pure` contract enforces it.
+- `rn_domain`: organizations, agents, agent versions, calls, contacts, consent records, leads, knowledge-base **metadata**, tool executions, campaigns — as pure entities, value objects and policies. No I/O; the `Domain is pure` contract enforces it. (Knowledge *chunks* are Phase 3, with the rest of D-8.)
 - `rn_persistence`: SQLAlchemy models, Alembic baseline migration, repositories, unit of work. `dead_letter_jobs` and `outbox` tables created now, with `outbox.id` a uuidv7 so `ORDER BY id` is insertion order, and a partial index `(id) WHERE published_at IS NULL`.
 - **No vector column and no `document_chunks` table.** The embedding model, width, column type, index and partitioning are open decision **D-8**, resolved in Phase 3 after an Indic bake-off ([ADR-010](DECISIONS/ADR-010-defer-vector-storage-layout.md)). Nothing in Phases 1–2 needs a vector, and these are the two least reversible choices in the system — the width becomes part of the column type and partitioning cannot be retrofitted. Knowledge tables land in Phase 3 with the decision behind them.
 - `rn_services`: tenant context object and the authorization policy layer. (The single `vector_search()` helper arrives with the knowledge tables in Phase 3 — but its *interface* is designed so swapping exact search for an ANN index is a change inside it.)
@@ -185,10 +201,13 @@ Deliverables and evidence are listed under [Completed](#completed). Done when `u
 
 **Done when**
 
-- `alembic upgrade head` then `alembic downgrade base` succeeds on a clean container.
+- `alembic upgrade head` then `alembic downgrade base` succeeds on a clean container, and `upgrade head` succeeds again afterwards.
+- `alembic check` reports no drift between the models and the migration.
 - A test asserts that a repository read scoped to org A **cannot** return a row owned by org B, and that the scoping comes from a server-side context object, not a parameter.
-- `vector_search()` is the only code path that issues a `<=>` query — asserted by a grep-style test.
-- CI is green on all six checks.
+- A test asserts that no vector column and no `document_chunks` table exist — D-8 must not be decided by accident.
+- CI is green on every check in `.github/workflows/ci.yml`.
+
+*(The criterion "`vector_search()` is the only code path that issues a `<=>` query" was moved to **Phase 3**, where the vector column and the helper actually exist. It was unsatisfiable here: Phase 1 creates no vector column, so the only way to pass it was to build the thing ADR-010 defers.)*
 
 **Key risks**
 
