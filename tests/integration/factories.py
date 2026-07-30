@@ -25,14 +25,17 @@ from rn_domain.enums import (
     LeadStatus,
     OrganizationStatus,
 )
-from rn_domain.values import PhoneNumber
+from rn_domain.values import LanguagePolicy, LanguageTag, PhoneNumber
 from rn_persistence.models import (
     AgentModel,
+    AgentToolConfigModel,
+    AgentVersionKnowledgeBaseModel,
     AgentVersionModel,
     CallModel,
     CampaignContactModel,
     CampaignModel,
     ContactModel,
+    KnowledgeBaseModel,
     LeadModel,
     OrganizationMemberModel,
     OrganizationModel,
@@ -135,9 +138,39 @@ async def create_contact(
     return contact
 
 
+#: The default language policy for a test agent version.
+#:
+#: Two languages rather than one, so that a test which accidentally assumes a
+#: monolingual agent fails visibly. `languages` is never passed independently —
+#: `projection` is where it comes from, and a database CHECK rejects any row where
+#: the two disagree.
+DEFAULT_LANGUAGE_POLICY = LanguagePolicy(
+    primary=LanguageTag("en"),
+    allowed=(LanguageTag("en"), LanguageTag("hi-IN")),
+)
+
+
 async def create_agent_version(
-    session: AsyncSession, *, organization_id: uuid.UUID, published: bool = True
+    session: AsyncSession,
+    *,
+    organization_id: uuid.UUID,
+    published: bool = True,
+    status: AgentVersionStatus | None = None,
+    instructions: str = "You are a helpful assistant for integration tests.",
+    language_policy: LanguagePolicy | None = None,
+    voice_map: dict[str, object] | None = None,
+    turn_policy: dict[str, object] | None = None,
+    guardrail_config: dict[str, object] | None = None,
 ) -> AgentVersionModel:
+    """One agent and one version of it.
+
+    `status` overrides `published` when supplied, so a test can build an archived
+    version — which `published=False` cannot express.
+    """
+    policy = language_policy or DEFAULT_LANGUAGE_POLICY
+    resolved_status = status or (
+        AgentVersionStatus.PUBLISHED if published else AgentVersionStatus.DRAFT
+    )
     agent = AgentModel(
         id=new_id(),
         organization_id=organization_id,
@@ -153,13 +186,14 @@ async def create_agent_version(
         organization_id=organization_id,
         agent_id=agent.id,
         version_number=1,
-        instructions="You are a helpful assistant for integration tests.",
-        languages=["en", "hi-IN"],
-        status=(AgentVersionStatus.PUBLISHED if published else AgentVersionStatus.DRAFT).value,
-        voice_map={},
-        turn_policy={},
-        guardrail_config={},
-        published_at=now_utc() if published else None,
+        instructions=instructions,
+        languages=policy.projection,
+        language_policy=policy.to_storage(),
+        status=resolved_status.value,
+        voice_map=voice_map or {},
+        turn_policy=turn_policy or {},
+        guardrail_config=guardrail_config or {},
+        published_at=now_utc() if resolved_status is AgentVersionStatus.PUBLISHED else None,
         created_at=now_utc(),
     )
     session.add(version)
@@ -168,6 +202,66 @@ async def create_agent_version(
     agent.current_version_id = version.id
     await session.flush()
     return version
+
+
+async def create_knowledge_base(
+    session: AsyncSession,
+    *,
+    organization_id: uuid.UUID,
+    name: str | None = None,
+    description: str | None = "Seeded for tests.",
+) -> KnowledgeBaseModel:
+    knowledge_base = KnowledgeBaseModel(
+        id=new_id(),
+        organization_id=organization_id,
+        name=name or _unique("Topic"),
+        description=description,
+        created_at=now_utc(),
+    )
+    session.add(knowledge_base)
+    await session.flush()
+    return knowledge_base
+
+
+async def enable_tool(
+    session: AsyncSession,
+    *,
+    organization_id: uuid.UUID,
+    agent_version_id: uuid.UUID,
+    tool_name: str,
+    enabled: bool = True,
+) -> AgentToolConfigModel:
+    row = AgentToolConfigModel(
+        id=new_id(),
+        organization_id=organization_id,
+        agent_version_id=agent_version_id,
+        tool_name=tool_name,
+        enabled=enabled,
+        config={},
+        created_at=now_utc(),
+    )
+    session.add(row)
+    await session.flush()
+    return row
+
+
+async def bind_knowledge_base(
+    session: AsyncSession,
+    *,
+    organization_id: uuid.UUID,
+    agent_version_id: uuid.UUID,
+    knowledge_base_id: uuid.UUID,
+) -> AgentVersionKnowledgeBaseModel:
+    row = AgentVersionKnowledgeBaseModel(
+        id=new_id(),
+        organization_id=organization_id,
+        agent_version_id=agent_version_id,
+        knowledge_base_id=knowledge_base_id,
+        created_at=now_utc(),
+    )
+    session.add(row)
+    await session.flush()
+    return row
 
 
 async def create_campaign(

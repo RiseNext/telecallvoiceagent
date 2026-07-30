@@ -9,7 +9,7 @@
 
 ## Current Phase
 
-**Phase 0 — complete. Phase 1 — complete (see caveats). Phase 2 — not started.**
+**Phase 0 — complete. Phase 1 — complete (see caveats). Phase 2 — complete (see caveats). Phase 3 — not started.**
 
 The foundations exist and are exercised by tests against a real PostgreSQL. To be specific about what does and does not exist, because a well-organised tree is easy to over-read:
 
@@ -18,17 +18,78 @@ The foundations exist and are exercised by tests against a real PostgreSQL. To b
 | `rn_core` | **Implemented.** Typed settings with fail-fast environment validation, UUIDv7 ids, UTC-only clock helpers, error taxonomy, centralised redaction, correlation contextvars, structured logging, OTel bootstrap (off by default). |
 | `rn_domain` | **Implemented.** 20 entities in 6 modules, value objects, enums, the permission catalog, `TenantContext`/`PlatformContext`, domain events, pure policies. Purity verified at runtime as well as by contract. |
 | `rn_persistence` | **Implemented.** 21 tables, ORM models with explicit domain mappers, tenant-scoped repositories, Unit of Work, Alembic baseline `0001`. |
-| `rn_services` | **Authorization seam only.** `Principal`, membership-derived `build_tenant_context`, resource policies. No business use cases yet — those belong to the phases that need them. |
-| Database schema, Alembic migration | **21 tables**, round-trip verified (`upgrade → downgrade → upgrade`) on real PostgreSQL. `alembic check` clean. |
+| `rn_services` | **Authorization seam plus the agent use cases.** `Principal`, membership-derived `build_tenant_context`, resource policies; `rn_services.contracts` (protocols and DTOs, no persistence imports) and `rn_services.agents` (published-configuration loader, knowledge catalog). Remaining business use cases belong to the phases that need them. |
+| `rn_providers` | **The text-mode `LLMProvider` seam and its fake.** No vendor adapter — Phase 2's gate requires CI to run with no network egress, which a real adapter cannot satisfy. `VoiceSession`, telephony, STT/TTS, messaging and storage seams are absent. |
+| `rn_agent` | **Implemented.** Immutable `AgentSnapshot` with a deterministic content hash, four-layer instruction composition, the typed tool registry with flat Realtime schema export, the five-stage dispatch pipeline, disclosure and opt-out guardrails (en/hi/te), a bounded text conversation loop, and two READ-only built-in tools. Framework-free, verified statically and at runtime. |
+| The V1 tool set (18 tools) | **Not built.** 13 arrive in Phase 3, `record_opt_out` in Phase 9, four in Phase 10. Each needs a permission that is not in the frozen catalog, so each of those phases owns a migration. |
+| `rn_orchestration` | none — Phase 11. No LangChain or LangGraph code exists anywhere. |
+| Database schema, Alembic migrations | **21 tables**, migrations `0001` and `0002`, round-trip verified (`upgrade → downgrade → upgrade`, and `0002` down/up over a real pre-`0002` row) on real PostgreSQL. `alembic check` clean. |
 | Row-level security | **Not implemented — Phase 15.** Isolation today is application scoping plus composite foreign keys. Do not read the tenant-isolation suite as covering RLS. |
 | Vector column, `document_chunks` | **Deliberately absent.** Open decision **D-8**, Phase 3 ([ADR-010](DECISIONS/ADR-010-defer-vector-storage-layout.md)). A test asserts they do not exist. |
-| API endpoints, agent runtime, telephony, job broker, scheduler, outbox relay, frontend pages | none |
-| Tests | **221 passing** — 147 unit, 74 integration against ephemeral PostgreSQL, including a 26-test cross-tenant security suite. |
+| Audio, telephony, realtime voice, STT/TTS, retrieval, API endpoints, job broker, scheduler, outbox relay, frontend pages | none |
+| Tests | **512 passing** — 406 unit, 91 integration against ephemeral PostgreSQL, 15 `agent_eval` Tier-1. Includes the cross-tenant security suite, the role-ownership suite, and the Phase-2 compliance gates. |
 | Anything measured — latency, throughput, concurrency, cost | **nothing** |
 
 Every number in this repository is still a target or a budget. We have measured no performance characteristic of anything.
 
 ## Completed
+
+**Phase 2 — Agent core: definitions, versioning, tool registry, guardrails.**
+
+- **`AgentSnapshot`** — frozen, with no `dict`/`list`/`set` field anywhere: open-shape
+  configuration is carried as sorted key/value tuples and provider tool specs as
+  canonical JSON *text*, so two concurrent calls sharing one snapshot cannot observe
+  each other. Construction is pure — a test replaces the clock and the id generator with
+  something that raises, which is the only check that would catch a `now_utc()` creeping
+  into the hashed document.
+- **`content_hash`** — SHA-256 over an explicitly defined canonical document with a
+  schema version. A change-detection and cache-key value; **not** a content-addressed
+  identifier and not a signature, and the docstring says so.
+- **Instruction composition** — four layers, platform first. `compose_instruction_prefix`
+  has no override parameter, and the test asserts the *signature*, because "there is no
+  way to ask for this" is a claim about the signature rather than about behaviour.
+  Tenant text is bounded, control-character-stripped and never interpolated into layer 1.
+- **The typed tool registry** — declared once, validated at import (duplicate name, name
+  shape, description length, `ToolArgs` base, permission in the frozen catalog, effect,
+  timeout range, collision with server-injected names), frozen after the built-ins load.
+  Flat Realtime specs generated straight from Pydantic with `$ref` inlined, and a test
+  that asserts `"function"` is not a top-level key — the HC-19 failure that is silent.
+- **The dispatch pipeline** — resolve, authorize twice, parse, strip forged trusted
+  context, validate, execute under a deadline, envelope. The model never sees an
+  exception; a scope/runtime tenant mismatch raises rather than softening into
+  "unavailable".
+- **Guardrails as code** — AI-disclosure detection and multilingual opt-out recognition,
+  en/hi/te, native script and romanised, with the negation traps handled in both
+  directions. **Six real matcher bugs were found by testing, not by review**: five from
+  `` being the wrong boundary for Indic suffix particles and for Devanagari combining
+  marks, and one — found in the pre-commit audit — where the *precomposed* Devanagari
+  nukta form of `फ़ोन` silently failed to match, so an opt-out spoken with that spelling
+  would have been missed. Both matchers now normalise input and patterns to NFC.
+- **`LLMProvider` seam and `FakeLLMProvider`** — a scripted, self-checking, offline tape.
+- **A bounded conversation loop** — turns, tool rounds per turn, tool calls per round and
+  invalid-argument retries each bounded, each with a named `StopReason`. No `while True`.
+- **Migration `0002`** — `agent_versions.language_policy`, backfilled from `languages`,
+  with a CHECK making the two structurally unable to disagree and a replaced freeze
+  trigger so the new behaviour column is covered by published-version immutability.
+- **`agent_eval` Tier 1** — nine declarative scenarios, gating AI disclosure and opt-out
+  in all three languages plus injection resistance. Runs in CI with no network egress.
+- **Tests: 512 passing**, up from 221 — 406 unit, 91 integration, 15 `agent_eval` Tier-1.
+
+**Caveats, stated rather than buried:**
+
+- **AI-disclosure enforcement is detective, not preventive.** Generated speech cannot be
+  constrained token by token, so absence is a compliance finding and a hard evaluation
+  failure. That is the strongest control available and it is not the same as prevention.
+- **Opt-out recognition is not opt-out enforcement.** The matcher fires independently of
+  the model; writing the durable `suppressions` row and blocking future dialling is
+  Phase 9.
+- **Tier-1 evaluation measures the platform, not a model.** The assistant turns are
+  scripted, so nothing in it is evidence about model quality, Hindi/Telugu fluency
+  (**D-2**) or latency.
+- **Hindi and Telugu matcher recall is unmeasured.** The tables cover the formulations we
+  expect; real recall is an evaluation question against real transcripts.
+- **Nothing has been benchmarked.** No latency, throughput or concurrency figure exists
+  for any of this.
 
 **Phase 1 — Foundations: core, domain, persistence, tenancy, authorization.**
 

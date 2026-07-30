@@ -48,7 +48,7 @@ from rn_domain.identifiers import (
 from rn_domain.permissions import ALL_PERMISSIONS, ORG_PERMISSIONS, PLATFORM_PERMISSIONS
 from rn_domain.policies import DialRejection, RetryPolicy, evaluate_dial_eligibility, next_retry_at
 from rn_domain.tenancy import PlatformContext, TenantContext
-from rn_domain.values import LanguageTag, PhoneNumber
+from rn_domain.values import LanguagePolicy, LanguageTag, PhoneNumber
 
 pytestmark = [pytest.mark.unit]
 
@@ -188,7 +188,7 @@ def _agent_version(**overrides: object) -> AgentVersion:
         "agent_id": AgentId(new_id()),
         "version_number": 1,
         "instructions": "You are Aira, a helpful assistant for RiseNext.",
-        "languages": (LanguageTag("en"),),
+        "language_policy": LanguagePolicy.single("en"),
     }
     defaults.update(overrides)
     return AgentVersion(**defaults)  # type: ignore[arg-type]
@@ -200,8 +200,27 @@ def test_agent_version_requires_substantive_instructions() -> None:
 
 
 def test_agent_version_requires_a_language() -> None:
+    """The invariant now lives on `LanguagePolicy`, which is where it belongs.
+
+    An agent version has no `languages` field to leave empty — `languages` is a
+    read-only projection of the policy — so the only way to reach this state is
+    through a policy that allows nothing, and the policy refuses to exist.
+    """
     with pytest.raises(InvariantViolation):
-        _agent_version(languages=())
+        LanguagePolicy(primary=LanguageTag("en"), allowed=())
+
+
+def test_agent_version_languages_project_the_policy() -> None:
+    """`languages` is derived, not stored. There is nothing to disagree with."""
+    policy = LanguagePolicy(
+        primary=LanguageTag("hi-IN"),
+        allowed=(LanguageTag("hi-IN"), LanguageTag("en")),
+    )
+    version = _agent_version(language_policy=policy)
+    assert version.languages == policy.allowed
+    # And it is genuinely a property: assigning it is not a thing you can do.
+    with pytest.raises(AttributeError):
+        version.languages = ()  # type: ignore[misc]
 
 
 def test_publishing_freezes_the_version() -> None:

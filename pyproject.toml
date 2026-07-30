@@ -62,7 +62,11 @@ dev = [
     "fakeredis>=2.31.0",          # Redis-free unit tests
     "testcontainers[postgres]>=4.13.0",  # real Postgres+pgvector for integration tests
     "freezegun>=1.5.0",           # deterministic time for callback/window logic
+    # Evaluation scenarios are declarative data, not test functions, so the same file
+    # can drive the scripted CI tier and the later judged tier (AGENT_ARCHITECTURE §11.2).
+    "pyyaml>=6.0.2",
     "types-python-dateutil>=2.9.0",
+    "types-pyyaml>=6.0.12",
 ]
 
 # ===========================================================================
@@ -319,12 +323,18 @@ forbidden_modules = ["openai", "boto3", "aioboto3", "clerk_backend_api", "svix"]
 # Domain data is reached through rn_services. psycopg is deliberately NOT forbidden
 # here: rn_orchestration owns the LangGraph checkpointer, which is framework state
 # for a graph run, not business data. Domain tables stay behind rn_services.
+#
+# `redis` is forbidden too. The agent layer is called from the API, from a worker and
+# from the voice gateway, and each of those already owns its own coordination
+# primitives; an agent package that reached for Redis directly would be holding
+# coordination state its callers cannot see or bound. When Phase 9 needs an
+# idempotency window, it goes behind an rn_services interface like everything else.
 [[tool.importlinter.contracts]]
 name = "Agent layers reach domain data only through rn_services"
 type = "forbidden"
 allow_indirect_imports = true
 source_modules = ["rn_agent", "rn_orchestration"]
-forbidden_modules = ["rn_persistence", "sqlalchemy", "asyncpg"]
+forbidden_modules = ["rn_persistence", "sqlalchemy", "asyncpg", "redis"]
 
 # The voice gateway is a media bridge. It reads its context through rn_services and
 # writes durable state through rn_services. A direct DB call here is a latency bug.

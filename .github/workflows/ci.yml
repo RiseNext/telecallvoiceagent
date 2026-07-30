@@ -95,6 +95,18 @@ jobs:
         run: |
           uv run alembic check
 
+      # The agent compliance gates, run as their own step so a failure reads as
+      # "AI disclosure regressed" rather than being one red line in a 300-test run.
+      # Compliance, opt-out and injection resistance are gates, not scores: a version
+      # that regresses on one cannot be published, whatever its average
+      # (AGENT_ARCHITECTURE §11.1).
+      #
+      # Tier 1 only: scripted callers, a scripted provider, in-memory tool services.
+      # No network egress and no paid API — which is what the Phase-2 definition of
+      # done requires of it.
+      - name: Agent evaluation — Tier 1 compliance gates
+        run: uv run pytest -m agent_eval
+
       - name: Tests
         run: uv run pytest -m "not live and not load" --cov --cov-report=term-missing
 

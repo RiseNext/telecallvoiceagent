@@ -250,7 +250,33 @@ The distinction the runtime rests on ([ARCHITECTURE.md](ARCHITECTURE.md) §4.4),
 | **Version** | `agent_versions` + `agent_tool_configs` + `agent_version_knowledge_bases` | **immutable once published** | forever, never hard-deleted |
 | **Session** | *no table* — in-process state in the voice gateway | ephemeral | one call |
 
-`agent_versions` holds everything that changes behaviour: `instructions`, `language_config`, `voice_map` (JSONB — a `language → (provider, voice_id)` map, per PROVIDER_CONSTRAINTS §3), `turn_policy` (JSONB — VAD mode, eagerness, thresholds), `realtime_model`, `reasoning_effort`, `telephony_sample_rate`, `guardrail_config`, `version_number`, `published_at`, `created_by_user_id`.
+`agent_versions` holds everything that changes behaviour: `instructions`, `language_policy` (JSONB), `languages` (`text[]`), `voice_map` (JSONB — a `language → (provider, voice_id)` map, per PROVIDER_CONSTRAINTS §3), `turn_policy` (JSONB — VAD mode, eagerness, thresholds), `realtime_model`, `telephony_sample_rate`, `guardrail_config`, `version_number`, `published_at`, `created_by_user_id`.
+
+**`language_policy` and `languages` are one fact, not two** (migration `0002`).
+`language_policy` is authoritative and holds `primary`, `allowed`, `follow_caller` and
+`code_switch`. `languages` is a denormalised **projection** of `allowed`, kept as a real
+array so "which agents speak Telugu?" is an indexable query rather than a JSONB scan.
+Two CHECK constraints stop them diverging:
+
+```sql
+CHECK (to_jsonb(languages) IS NOT DISTINCT FROM language_policy -> 'allowed')
+CHECK (cardinality(languages) >= 1
+   AND jsonb_typeof(language_policy -> 'allowed') = 'array'
+   AND language_policy ? 'primary'
+   AND language_policy -> 'allowed' @> jsonb_build_array(language_policy ->> 'primary')
+   AND coalesce(jsonb_typeof(language_policy -> 'follow_caller'), '') = 'boolean'
+   AND coalesce(jsonb_typeof(language_policy -> 'code_switch'), '') = 'boolean')
+```
+
+`IS NOT DISTINCT FROM` rather than `=`, and `coalesce(jsonb_typeof(...), '')` rather than
+a bare comparison, because **a CHECK whose expression evaluates to NULL passes** — and a
+missing key is exactly the row that must be rejected. On the Python side there is only
+one field: `AgentVersion.languages` is a read-only property over
+`language_policy.allowed`, so the projection cannot be authored independently.
+
+`reasoning_effort` is **not** a column. Whether it survives in the GA session object is
+listed UNVERIFIED in AGENT_ARCHITECTURE §12, and a column for an unconfirmed provider
+field is a migration waiting to be reverted.
 
 **Tool enablement belongs to the version, not the agent.** Turning on `send_whatsapp` changes what the agent can do to the world; if that lived on `agents`, "which configuration handled this call" would be answerable for the prompt but not for the tools, which is worse than not answerable at all. Same argument for knowledge-base bindings.
 
