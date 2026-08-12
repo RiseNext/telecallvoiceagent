@@ -6,7 +6,11 @@
 
 The first agent, *Aira*, is RiseNext's own sales assistant. **She is a tenant configuration, not the product.** If you find yourself writing `if org == "risenext"` or `risenext_agent.py`, stop — that is an architecture violation.
 
-**Current state: Phase 2 complete.** `rn_core`, `rn_domain`, `rn_persistence` (21 tables, migrations `0001`+`0002`), the `rn_services` authorization seam and agent use cases, the `rn_providers` text-mode `LLMProvider` seam with its fake, and `rn_agent` — snapshot, instruction composition, typed tool registry, dispatch pipeline, guardrails, text conversation loop — are implemented and tested. **Nothing above them exists** — no audio, no telephony, no realtime voice, no retrieval, no job broker, no API endpoints, no frontend pages, and none of the 18 V1 tools. Check [docs/ROADMAP.md](docs/ROADMAP.md) before assuming anything works.
+**Current state: Phase 2 complete; Phase 3 Stage 1 complete.** `rn_core`, `rn_domain`, `rn_persistence` (21 tables, migrations `0001`+`0002`), the `rn_services` authorization seam and agent use cases, the `rn_providers` text-mode `LLMProvider` seam with its fake, and `rn_agent` — snapshot, instruction composition, typed tool registry, dispatch pipeline, guardrails, text conversation loop — are implemented and tested.
+
+Phase 3 **Stage 1** adds only what does not touch the schema: the `EmbeddingProvider` seam plus a deterministic offline fake and an OpenAI adapter tested against a mocked transport; embedding/retrieval settings; script-aware normalisation, the **frozen** chunker and flag-only ingestion sanitisation in `rn_domain`; and the D-8 bake-off harness in `tests/d8_bakeoff/`, including the official Rise Next business material (supplied 2026-07-30) and the corpus decomposed from it — 143 passages, 804 queries, every passage source-grounded or deliberately adversarial, all offline, no paid call. **Human review of that corpus is complete** (Rise Next team, 2026-08-11): all 101 templates across all eight subsets, all 7 service-name translation sets and all 76 spot checks, so `review_completeness` and `spot_check` pass and every subset is review-complete. **Two gates remain blocked, both on business input, neither on code**: `adversarial_present` (no superseded Rise Next content exists, and it cannot be synthesised) and `size` (143 passages against a 600 target — §11's measured alternative states no margin and needs four inputs decided in an ADR before it can replace the count).
+
+**Nothing above them exists** — no audio, no telephony, no realtime voice, **no retrieval and no vector column**, no job broker, no API endpoints, no frontend pages, and none of the 18 V1 tools. **D-8 is still open**: no embedding model, width, column type or index has been chosen, and Stage 2 (migration `0003`, `document_chunks`, `vector_search()`, the 12 Phase-3 tools) must not be written until [ADR-011](docs/research/D8_BAKEOFF.md) records the measured answer. Check [docs/ROADMAP.md](docs/ROADMAP.md) before assuming anything works.
 
 Three things that are deliberately absent and must stay that way until their phase:
 
@@ -25,6 +29,7 @@ Three things that are deliberately absent and must stay that way until their pha
 | What phase are we in, what is next? | [docs/ROADMAP.md](docs/ROADMAP.md) |
 | Why was a decision made this way? | [docs/DECISIONS/](docs/DECISIONS/) |
 | **What did we actually verify about our providers?** | [docs/research/PROVIDER_CONSTRAINTS.md](docs/research/PROVIDER_CONSTRAINTS.md) |
+| How does D-8 get answered, and what still blocks it? | [docs/research/D8_BAKEOFF.md](docs/research/D8_BAKEOFF.md) |
 
 That last one matters more than it looks. It separates **[C] confirmed against primary docs** from **[A] assumed**, and its final section lists plausible-sounding claims that could **not** be confirmed. Do not promote an assumption into a fact by writing it into code or docs.
 

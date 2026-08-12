@@ -3,13 +3,27 @@
 Every external system sits behind an interface declared here, so that swapping a
 vendor is an adapter change rather than a change to business logic.
 
-**Phase 2 delivers the text-mode `LLMProvider` seam and its fake, and nothing
-else.** There is no vendor adapter in this package yet: the realtime voice
-session, telephony, STT/TTS, messaging and storage seams arrive with the phases
-that need them. `openai`, `boto3` and the identity SDKs are optional extras and
-are not imported by anything here.
+**What exists: the text-mode `LLMProvider` seam (Phase 2) and the
+`EmbeddingProvider` seam (Phase 3), each with a deterministic offline fake.** The
+realtime voice session, telephony, STT/TTS, messaging and storage seams arrive
+with the phases that need them.
+
+**Concrete adapters are deliberately NOT re-exported here.** Import one by its own
+module — `rn_providers.openai_embeddings` — for a reason a test enforces:
+importing any submodule runs this `__init__` first, so an adapter exported here
+would drag `httpx` into every process that touches `rn_providers.fakes`, and
+`tests/unit/test_framework_independence.py` asserts the fakes pull in no transport
+library at all. Keeping this module free of adapters is what makes an offline,
+dependency-light fake path genuinely offline.
 """
 
+from rn_providers.embeddings import (
+    EmbeddingBatch,
+    EmbeddingProvider,
+    EmbeddingUsage,
+    EmbeddingVector,
+    TextRole,
+)
 from rn_providers.llm import (
     Completion,
     FinishReason,
@@ -29,10 +43,15 @@ __version__ = "0.1.0"
 
 __all__ = [
     "Completion",
+    "EmbeddingBatch",
+    "EmbeddingProvider",
+    "EmbeddingUsage",
+    "EmbeddingVector",
     "FinishReason",
     "LLMProvider",
     "Message",
     "MessageRole",
+    "TextRole",
     "ToolCallRequest",
     "ToolSpecPayload",
     "Usage",

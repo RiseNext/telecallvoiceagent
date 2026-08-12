@@ -212,7 +212,9 @@ This fails *silently* in the worst way: the session may accept the payload but t
 
 That is **18**, matching [PRD §6.4](../PRD.md), [GLOSSARY](GLOSSARY.md), [TESTING](TESTING.md) and [COMPLIANCE](COMPLIANCE.md). `record_opt_out` was missing from this list until Phase 2 and is **not** interchangeable with `mark_not_interested`: the former writes a durable cross-campaign suppression, the latter records a sales-interest signal.
 
-**None of the 18 exists yet.** They arrive in Phase 3 (13 retrieval/lead/company tools), Phase 9 (`record_opt_out`, with the suppression write and the pre-dial gate) and Phase 10 (`check_availability`, `book_meeting`, `schedule_callback`, `send_whatsapp`). Phase 2 ships two READ-only built-ins over knowledge-base metadata — `list_knowledge_bases` and `find_knowledge_base` — which exist to exercise the pipeline, not to be part of this set.
+**None of the 18 exists yet.** They arrive in **Phase 3 (12** retrieval/lead/company tools), Phase 9 (`record_opt_out`, with the suppression write and the pre-dial gate) and **Phase 10 (five**: `check_availability`, `book_meeting`, `schedule_callback`, `send_whatsapp`, `send_service_brochure`). 12 + 1 + 5 = 18. Phase 2 ships two READ-only built-ins over knowledge-base metadata — `list_knowledge_bases` and `find_knowledge_base` — which exist to exercise the pipeline, not to be part of this set.
+
+*(This paragraph previously said "Phase 3 (13 …)" while listing `check_availability` under Phase 10, and [ROADMAP](ROADMAP.md) listed that tool in both phases. Resolved in favour of Phase 10: availability and booking are one slot-issue/slot-verify mechanism, and the "the model may echo an id, never originate one" invariant is only testable when both halves exist. See the note in ROADMAP's Phase 3.)*
 
 Two design rules visible in that list. **Retrieval and authority are separate tools:** `search_knowledge` answers *"what do you do?"*; `get_service_pricing` answers *"what does it cost?"*. Knowledge is fuzzy and quotable; pricing is authoritative and exact, and it must never come out of a vector index. **Availability is a read before it is a write:** `check_availability` returns opaque slot ids, and `book_meeting` accepts only an id that was returned. The model cannot construct a slot because it never sees a slot's internals.
 
@@ -332,7 +334,7 @@ Structural measures, which are the actual defence:
 
 - **The enabled tool list is session configuration.** No amount of injected text adds a tool to the session, because the model can only call what was declared at `session.update`.
 - **Tenant identity is injected, never parsed** (§4.3), so "you are now serving organization X" changes nothing that matters.
-- **Retrieval is tenant-scoped inside a single helper** in `rn_services`, so there is no query shape a caller can induce that reaches another tenant's chunks.
+- **Retrieval is tenant-scoped inside a single helper**, so there is no query shape a caller can induce that reaches another tenant's chunks. Precisely: a tool calls a retrieval **service** in `rn_services`, and that service is the only caller of the one function in `rn_persistence` that issues a `<=>` query. A tool cannot reach the persistence function even in principle — the import contract forbids `rn_agent` from importing `rn_persistence`. See [DATA_MODEL §7](DATA_MODEL.md#the-single-retrieval-helper--and-the-two-layers-it-is-split-across), which is authoritative on the split. *(This bullet previously said the helper lived in `rn_services`, which conflated the orchestration with the SQL.)*
 - **Every external effect is permission-checked and compliance-gated in code** after the model has requested it.
 
 The adversarial test for this is a V1 success criterion in the PRD: zero cross-tenant access under prompt-injection attempts.

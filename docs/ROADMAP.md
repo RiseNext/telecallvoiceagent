@@ -9,7 +9,18 @@
 
 ## Current Phase
 
-**Phase 0 — complete. Phase 1 — complete (see caveats). Phase 2 — complete (see caveats). Phase 3 — not started.**
+**Phase 0 — complete. Phase 1 — complete (see caveats). Phase 2 — complete (see caveats). Phase 3 — Stage 1 COMPLETE (all sub-stages, human review closed); Stage 2 not started and correctly blocked.**
+
+Phase 3 is being built in two stages, deliberately, because [ADR-010](DECISIONS/ADR-010-defer-vector-storage-layout.md) forbids writing the vector schema before **D-8** is measured:
+
+- **Stage 1 — schema-independent foundations. Implemented.** The `EmbeddingProvider` seam and its deterministic offline fake; the OpenAI adapter with mocked-transport tests; embedding and retrieval settings; script-aware normalisation; the frozen chunker; ingestion flagging (instruction-shaped and price-shaped, **flag-only**); and the D-8 bake-off harness — dataset format, seed dataset, metrics, candidate manifest, cost estimator and report artifact. See [research/D8_BAKEOFF.md](research/D8_BAKEOFF.md).
+- **Stage 1b — corpus workflow and pre-benchmark readiness. Implemented.** The source-material and phrasebook intake templates; a deterministic offline corpus generator (four material tiers, mechanical typo variants, cross-script pairing, five kinds of hard negative); the template-first human-review workflow with propagation, a spot-check floor and unfakeable reviewer identity; and automated corpus quality gates. The remaining L-4…L-9 documentation contradictions from the Phase-3 audit are also resolved here.
+- **Stage 1c — the official Rise Next material, incorporated. Implemented.** The business source material supplied 2026-07-30, structured into ten categories with per-entry provenance; a four-value `authority` classification separating what retrieval may serve from what only a typed tool may (the pricing *policy* is RAG-eligible, a price *value* is not, CRM field lists are neither); a phrasebook across all eight subsets; provenance on every generated row; and four business-constraint gates — no numeric price anywhere in the corpus, pricing gold is the policy, lending gold is the not-a-lender disclaimer, and every adversarial intent present in an Indic subset.
+- **Stage 1d — corpus expansion. Implemented.** The supplied material fully decomposed into **143 passages and 804 queries**, adding no business fact: the 69 named sub-services became one passage each, the never-promise list its nine clauses, and the company profile, business process, financing disclaimer and pricing policy their separable claims. Plus capability-specific queries with a deterministic service-balanced sample per subset, capability-misattribution hard negatives, topic-scoped gold so a split-up list does not dilute a gold set, and a `no_passage_duplication` gate — which caught a real flaw in the first decomposition on its first run. The 18 invented seed passages are **retired**; every remaining passage is source-grounded or deliberately adversarial.
+- **Stage 1e — human review, complete.** On 2026-08-11 the Rise Next team approved **all 101 phrasebook templates across all eight subsets, all 7 service-name translation sets and all 76 spot-check queries**, in two passes; two templates (`hi-deva-industries`, `xs-deva-out-of-scope`) were corrected and the corrections approved. **Every subset is review-complete — 804/804 queries `native_reviewed`** — so `review_completeness` and `spot_check` both pass. **Two blocking gates remain, correctly**: no superseded content was supplied so the `stale` role is empty, and the corpus is 143 passages against a 600 target that was estimated rather than measured. §11's Option B (replace the count with a measured criterion) was taken to implementation and **stopped**: as documented it states no margin, and four inputs must be decided in an ADR first — see [research/D8_BAKEOFF.md](research/D8_BAKEOFF.md) §11. Note the spot-check floor is met with **zero margin** in every subset, so adding queries requires adding spot checks in the same change.
+- **Stage 2 — everything that touches the schema. Not started.** Migration `0003`, `document_chunks`, `vector_search()`, the 12 tools, `services`/`service_prices`, the permission-catalog migration, RiseNext seeding. **Blocked on D-8 closing.** Native-speaker review is no longer part of that block — it closed on 2026-08-11. What remains is superseded Rise Next content for the `stale` role, the `size`-gate methodology decision, and approval for a paid benchmark run.
+
+**D-8 is still OPEN. No embedding model, width, column type or index has been chosen, and no paid API call has been made.**
 
 The foundations exist and are exercised by tests against a real PostgreSQL. To be specific about what does and does not exist, because a well-organised tree is easy to over-read:
 
@@ -19,20 +30,55 @@ The foundations exist and are exercised by tests against a real PostgreSQL. To b
 | `rn_domain` | **Implemented.** 20 entities in 6 modules, value objects, enums, the permission catalog, `TenantContext`/`PlatformContext`, domain events, pure policies. Purity verified at runtime as well as by contract. |
 | `rn_persistence` | **Implemented.** 21 tables, ORM models with explicit domain mappers, tenant-scoped repositories, Unit of Work, Alembic baseline `0001`. |
 | `rn_services` | **Authorization seam plus the agent use cases.** `Principal`, membership-derived `build_tenant_context`, resource policies; `rn_services.contracts` (protocols and DTOs, no persistence imports) and `rn_services.agents` (published-configuration loader, knowledge catalog). Remaining business use cases belong to the phases that need them. |
-| `rn_providers` | **The text-mode `LLMProvider` seam and its fake.** No vendor adapter — Phase 2's gate requires CI to run with no network egress, which a real adapter cannot satisfy. `VoiceSession`, telephony, STT/TTS, messaging and storage seams are absent. |
+| `rn_providers` | **Two seams: text-mode `LLMProvider` and `EmbeddingProvider`, each with a deterministic offline fake.** Phase 3 adds the embedding seam (`embed_documents`/`embed_query`, `TextRole`, width-validating `EmbeddingBatch`) and an OpenAI embedding adapter tested entirely against a mocked transport — CI still runs with no network egress, and **no model has been selected** (D-8). `VoiceSession`, telephony, STT/TTS, messaging and storage seams are absent. |
 | `rn_agent` | **Implemented.** Immutable `AgentSnapshot` with a deterministic content hash, four-layer instruction composition, the typed tool registry with flat Realtime schema export, the five-stage dispatch pipeline, disclosure and opt-out guardrails (en/hi/te), a bounded text conversation loop, and two READ-only built-in tools. Framework-free, verified statically and at runtime. |
-| The V1 tool set (18 tools) | **Not built.** 13 arrive in Phase 3, `record_opt_out` in Phase 9, four in Phase 10. Each needs a permission that is not in the frozen catalog, so each of those phases owns a migration. |
+| The V1 tool set (18 tools) | **Not built.** **12** arrive in Phase 3, `record_opt_out` in Phase 9, **five** in Phase 10. Each needs a permission that is not in the frozen catalog, so each of those phases owns a migration. |
 | `rn_orchestration` | none — Phase 11. No LangChain or LangGraph code exists anywhere. |
 | Database schema, Alembic migrations | **21 tables**, migrations `0001` and `0002`, round-trip verified (`upgrade → downgrade → upgrade`, and `0002` down/up over a real pre-`0002` row) on real PostgreSQL. `alembic check` clean. |
 | Row-level security | **Not implemented — Phase 15.** Isolation today is application scoping plus composite foreign keys. Do not read the tenant-isolation suite as covering RLS. |
 | Vector column, `document_chunks` | **Deliberately absent.** Open decision **D-8**, Phase 3 ([ADR-010](DECISIONS/ADR-010-defer-vector-storage-layout.md)). A test asserts they do not exist. |
 | Audio, telephony, realtime voice, STT/TTS, retrieval, API endpoints, job broker, scheduler, outbox relay, frontend pages | none |
-| Tests | **512 passing** — 406 unit, 91 integration against ephemeral PostgreSQL, 15 `agent_eval` Tier-1. Includes the cross-tenant security suite, the role-ownership suite, and the Phase-2 compliance gates. |
+| Tests | **970 passing** — 831 `unit`, 93 `integration` against ephemeral PostgreSQL, 31 `provider` (mocked adapters), 15 `agent_eval` Tier-1; 244 of the total are the D-8 bake-off suite. Includes the cross-tenant security suite, the role-ownership suite, and the Phase-2 compliance gates. `live` and `load` are excluded by `addopts`, so a bare `pytest` cannot spend money. *(Rows here have been stale twice — 512/406/91, then 526/418/93. Recount per marker after every phase rather than carrying the number forward.)* |
 | Anything measured — latency, throughput, concurrency, cost | **nothing** |
 
 Every number in this repository is still a target or a budget. We have measured no performance characteristic of anything.
 
 ## Completed
+
+**Phase 3 Stage 1 — the D-8 knowledge foundation. Schema-independent, offline, no model chosen.**
+
+- **`EmbeddingProvider` seam** — `embed_documents`/`embed_query` split so an asymmetric model
+  gets its query prefix; `EmbeddingBatch` carries `model_id` and `dimensions` and **refuses**
+  vectors of the wrong width, because a wrong-length vector reaching a typmod'd column is a
+  failure three layers from its cause. A deterministic offline fake, plus an OpenAI adapter
+  exercised entirely against a mocked transport.
+- **The frozen chunker** — `FROZEN_CHUNKING_V1`, budgeted in **grapheme clusters** rather than
+  characters: `len("हूँ")` is 3 and its grapheme length is 1, so a character budget gives Hindi
+  and Telugu systematically smaller chunks and turns a model comparison into a chunk-size
+  comparison. Frozen before the bake-off, with a test pinning the values.
+- **The Rise Next corpus** — the official material (supplied 2026-07-30) decomposed into
+  **143 passages and 804 queries** across eight subsets, adding **no business fact**: 69
+  capability atoms, the never-promise list split into its nine clauses, the company profile,
+  business process, financing disclaimer and pricing policy into their separable claims. The
+  18 invented seed passages are retired; every remaining passage is source-grounded or
+  deliberately adversarial.
+- **Human review, closed 2026-08-11** — all 101 templates, all 7 service-name translation sets
+  and all 76 spot checks approved by the Rise Next team. All 8 subsets review-complete.
+  Attribution is enforced rather than trusted: `is_placeholder_reviewer` refuses `claude`,
+  `gpt`, `gemini` and versioned forms, matched **per word** so `Nair`, `Rai` and `Vaidya` are
+  still accepted — a corpus reviewed by the thing that generated it is not reviewed.
+- **Fifteen corpus quality gates**, four of which encode business rules whose failure would be
+  invisible in a score: no money-shaped number anywhere in the corpus, pricing gold is the
+  *policy* not a price, lending gold is the not-a-lender disclaimer, and every adversarial
+  intent present in an Indic subset.
+- **`BLOCK` vs `FAIL`** — a gate blocked on business input renders differently from a broken
+  one, so a regression stands out against a queue that is waiting on a person. It does **not**
+  weaken readiness: `corpus_is_benchmark_ready` treats both identically.
+- **Two gates deliberately left not-passing**, and this is the outcome, not a shortfall:
+  `adversarial_present` (no superseded Rise Next content exists; inventing it would make the
+  gate pass while measuring a different failure) and `size` (143/600, and §11's measured
+  alternative states no margin — four inputs need an ADR first). Tests pin both so neither can
+  quietly flip.
 
 **Phase 2 — Agent core: definitions, versioning, tool registry, guardrails.**
 
@@ -73,7 +119,7 @@ Every number in this repository is still a target or a budget. We have measured 
   trigger so the new behaviour column is covered by published-version immutability.
 - **`agent_eval` Tier 1** — nine declarative scenarios, gating AI disclosure and opt-out
   in all three languages plus injection resistance. Runs in CI with no network egress.
-- **Tests: 512 passing**, up from 221 — 406 unit, 91 integration, 15 `agent_eval` Tier-1.
+- **Tests: 526 passing**, up from 221 — 418 unit, 93 integration, 15 `agent_eval` Tier-1.
 
 **Caveats, stated rather than buried:**
 
@@ -129,13 +175,56 @@ Every number in this repository is still a target or a budget. We have measured 
 
 ## In Progress
 
-Nothing. Phase 1 closed; Phase 2 not started.
+**Nothing.** Phase 3 Stage 1 closed on 2026-08-11; Stage 2 is blocked on D-8 and must not be
+started before it (ADR-010). See **Next** and **Blocked**.
+
+Phase 3 Stage 1 deliberately does **not** include: any migration, any vector column, any
+retrieval implementation, any of the 12 tools, and any choice of embedding model or width. The
+harness runs offline against a deterministic fake and a lexical baseline, and **refuses to mark
+any report decision-grade** while a candidate is offline — so the constraint is arithmetic
+rather than a reminder.
+
+*(This section has been stale twice: it once read "Nothing. Phase 1 closed; Phase 2 not
+started" while two phases had shipped, and then described Stage 1 as in-flight after it had
+finished. Update it in the same change that finishes the work.)*
 
 ## Next
 
-**Phase 2 — Agent core: definitions, versioning, tool registry, guardrails.**
+**Human content input, then close D-8, then Phase 3 Stage 2.**
 
-Phase 1 delivered the schema half of agent versioning (immutable `agent_versions`, enforced by a database trigger, with `calls.agent_version_id` pinning). Phase 2 builds the runtime half in `rn_agent`: resolving a version into a snapshot, composing layered instructions, the typed tool registry, and the guardrails — all framework-free, and with no audio anywhere.
+The official Rise Next business material arrived on 2026-07-30 and is in
+`tests/d8_bakeoff/source/risenext.yaml`, structured into ten categories, every entry
+source-grounded. It has now been fully decomposed: the corpus is **143 passages, 804
+queries** across all eight subsets, with no invented material left in it. **Human review
+closed on 2026-08-11** — all 101 templates, all 7 service-name sets and all 76 spot checks
+approved by the Rise Next team, every subset review-complete. D-8 now needs **one supplied
+artefact and one decision** before it can close:
+
+1. **Superseded content** — one old service description, a withdrawn offer, an expired
+   promotion, a superseded process description or a former tagline, in the `superseded:`
+   section of `source/risenext.yaml` (currently `[]`). For the `stale` adversarial role. It
+   **cannot be synthesised**: invented "old" text is a semantic distractor wearing a stale
+   label, and would make the gate pass while measuring a different failure mode.
+2. **A decision on the `size` gate.** `TARGET_PASSAGES = 600` was estimated, never measured,
+   and the free offline run shows the corpus discriminating clearly at 143 (cross-script
+   `answerability@8` 0.258 fake vs 0.065 lexical, both far below the 0.85 gate — nothing near
+   ceiling). Either more real Rise Next content arrives, or the count is replaced with a
+   measured criterion. **Option B was taken to implementation and stopped**: §11 states no
+   margin, and four inputs — the margin, the metric and `k`, absolute versus relative, and
+   what "best candidate" means before the paid run — must be decided in an ADR first. The
+   gate has **not** been changed quietly; see
+   [research/D8_BAKEOFF.md](research/D8_BAKEOFF.md) §11.
+
+After those: `build`, the review round-trip until the quality gates pass, and approval for a
+paid run (estimated **under two cents** for all six paid configurations at full target
+dataset size — see [research/D8_BAKEOFF.md](research/D8_BAKEOFF.md) §9). **Cost is not the
+constraint and never was.**
+
+Once ADR-011 records the chosen model and width **with the numbers**, Stage 2 writes
+migration `0003` against that answer as one coherent reviewed migration: `document_chunks`
+with `embedding_model`/`embedding_dim`/`embedded_at` per row, `documents`,
+`services`/`service_prices`, the successor permission-catalog snapshot, the single
+`vector_search()` helper, the 12 tools, and RiseNext seeded as an ordinary tenant.
 
 Still **not blocked by D-1**: development runs against local Docker PostgreSQL, and the schema is portable. What D-1 blocks is *provisioning the managed database*. **Do not create the Neon project until D-1 is answered** — the region is immutable at project creation ([PROVIDER_CONSTRAINTS](research/PROVIDER_CONSTRAINTS.md) HC-27) and Neon has no India region.
 
@@ -151,7 +240,7 @@ Eight open decisions from [PRD §12](../PRD.md#12-open-decisions). Seven need a 
 | **D-4** | **Calling window and DND responsibility** — the permitted IST window, and whether Exotel scrubs NCPR/DND server-side. | Phase 9. Determines whether we must integrate a third-party DND scrubbing service. | Partly. Build the pre-dial compliance gate with the window as **per-organization configuration**, never a constant (anti-fact #11: two different windows appear in secondary sources and neither is on an Exotel page). Assume scrubbing is ours until told otherwise (anti-fact #22). |
 | **D-5** | **Recording** — do we record calls at all in V1? Per-tenant configurable? | Phase 8 (inbound), because it changes the disclosure script. Influences Phase 4/5: whether the bridge tees raw audio to object storage. | Yes, cheaply — **if** the bridge is built with a tap point from the start. Retrofitting a media tap into a latency-critical loop is expensive; leaving an unused, disabled-by-default tap is not. |
 | **D-6** | **Provisioned capacity** — telephony channel capacity and realtime-model concurrency, confirmed commercially. | Phase 16 (load test), and therefore the entire V1 concurrency claim. | No. OpenAI documents **no** concurrent-session limit at any tier (HC-18), and Exotel's "unlimited concurrent calls" is marketing copy that appears in no developer doc (anti-fact #3). Until both are confirmed in writing we may not state a concurrency figure — see [PRD §7](../PRD.md#7-non-functional-requirements). |
-| **D-8** | **Production embedding model and vector storage layout** — model, width, column type, index, partitioning. | The `document_chunks` migration, and therefore all of Phase 3's retrieval work. Nothing earlier. | **Yes, and that is the point.** Phase 1 creates no vector column, so nothing is guessed. Phase 3 opens with the bake-off on real Indic and code-mixed data and closes D-8 before the migration is written. Every row carries `embedding_model` and `embedding_dim` from the first migration so a later re-embed can roll per tenant. The previously-recorded `halfvec(1536)` + LIST partitioning is **withdrawn** — see [ADR-010](DECISIONS/ADR-010-defer-vector-storage-layout.md). |
+| **D-8** | **Production embedding model and vector storage layout** — model, width, column type, index, partitioning. | The `document_chunks` migration, and therefore all of Phase 3 **Stage 2**. Nothing earlier. | **Yes, and that is the point.** Phase 1 creates no vector column, so nothing is guessed. Phase 3 opens with the bake-off on real Indic and code-mixed data and closes D-8 before the migration is written. Every row carries `embedding_model` and `embedding_dim` from the first migration so a later re-embed can roll per tenant. The previously-recorded `halfvec(1536)` + LIST partitioning is **withdrawn** — see [ADR-010](DECISIONS/ADR-010-defer-vector-storage-layout.md). **Stage-1 status:** the harness, metrics, gates and candidate manifest exist and run offline, and the corpus builds from the official Rise Next material — **143 passages, 804 queries, human review complete** across all eight subsets as of 2026-08-11 ([research/D8_BAKEOFF.md](research/D8_BAKEOFF.md)). What remains is superseded content for the `stale` role, a decision on the `size` gate (§11 — its measured alternative states no margin and needs four inputs decided in an ADR), and approval for a paid run. |
 | **D-7** | **Auth plan tier** — more than 10 custom Clerk roles, or verified-domain auto-join? | Phase 15. | Yes. Keep the role catalog ≤10 platform roles and put per-tenant role customisation in **our** database, not in Clerk claims (HC-31). If we never exceed 10, D-7 never becomes urgent. |
 
 **Also unresolved, but engineering-answerable** (not "blocked" — these are Phase 4 work items): the Exotel endpoint casing conflict, the sample-rate query-param name, the exact outbound media JSON shape, and whether the 320/3200/100000-byte chunk rules are absolute or scale with sample rate ([PROVIDER_CONSTRAINTS §6a](research/PROVIDER_CONSTRAINTS.md) items 1–4). All four are settled by **one** instrumented sandbox call whose wire trace we capture and keep. Phase 4 is built around doing exactly that.
@@ -256,7 +345,7 @@ Deliverables and evidence are listed under [Completed](#completed). Done when `u
 - `rn_domain`: organizations, agents, agent versions, calls, contacts, consent records, leads, knowledge-base **metadata**, tool executions, campaigns — as pure entities, value objects and policies. No I/O; the `Domain is pure` contract enforces it. (Knowledge *chunks* are Phase 3, with the rest of D-8.)
 - `rn_persistence`: SQLAlchemy models, Alembic baseline migration, repositories, unit of work. `dead_letter_jobs` and `outbox` tables created now, with `outbox.id` a uuidv7 so `ORDER BY id` is insertion order, and a partial index `(id) WHERE published_at IS NULL`.
 - **No vector column and no `document_chunks` table.** The embedding model, width, column type, index and partitioning are open decision **D-8**, resolved in Phase 3 after an Indic bake-off ([ADR-010](DECISIONS/ADR-010-defer-vector-storage-layout.md)). Nothing in Phases 1–2 needs a vector, and these are the two least reversible choices in the system — the width becomes part of the column type and partitioning cannot be retrofitted. Knowledge tables land in Phase 3 with the decision behind them.
-- `rn_services`: tenant context object and the authorization policy layer. (The single `vector_search()` helper arrives with the knowledge tables in Phase 3 — but its *interface* is designed so swapping exact search for an ANN index is a change inside it.)
+- `rn_services`: tenant context object and the authorization policy layer. (Retrieval arrives with the knowledge tables in Phase 3, as **two** things: a retrieval service here, and the one `<=>`-issuing function in `rn_persistence` that it is the only caller of — see [DATA_MODEL §7](DATA_MODEL.md#the-single-retrieval-helper--and-the-two-layers-it-is-split-across). The persistence function's *interface* is designed so swapping exact search for an ANN index is a change inside it.)
 - Extend the **existing** `infrastructure/local/docker-compose.yml` and `infrastructure/local/init-db.sql` as the schema needs them — both already stand up `pgvector/pgvector:pg17` and `redis:8-alpine` with the `vector`, `pgcrypto` and `pg_trgm` extensions. Do not recreate them.
 - Extend the **existing** `.github/workflows/ci.yml` — it already runs the python job against Postgres and Redis services — so that it also runs `alembic upgrade head`/`downgrade base` and `pytest -m "unit or integration"` against a real database. Do not recreate it.
 
@@ -330,7 +419,9 @@ Deliverables and evidence are listed under [Completed](#completed). Done when `u
 - `EmbeddingProvider` seam over whichever model D-8 selects.
 - Retrieval starts **exact** (100% recall, no filtered-ANN exposure) and moves to an ANN index only when a measurement says exact is too slow — at which point `iterative_scan='relaxed_order'` and a raised `ef_search` become mandatory, per HC-25.
 - The single `vector_search()` helper — the only code path allowed to issue a `<=>` query, so no caller can forget the tenant filter or the index tuning.
-- The tool set: `search_knowledge` · `search_services` · `get_service_details` · `get_service_pricing` · `get_company_information` · `search_faq` · `create_lead` · `update_lead` · `save_customer_requirement` · `check_availability` · `mark_interested` · `mark_not_interested` · `add_call_note` — 13 of the 18. (Booking, callback and WhatsApp tools land in Phase 10; `record_opt_out` lands in Phase 9, where the durable cross-campaign suppression write it needs first exists.)
+- The tool set: `search_knowledge` · `search_services` · `get_service_details` · `get_service_pricing` · `get_company_information` · `search_faq` · `create_lead` · `update_lead` · `save_customer_requirement` · `mark_interested` · `mark_not_interested` · `add_call_note` — **12** of the 18. (`record_opt_out` lands in Phase 9, where the durable cross-campaign suppression write it needs first exists. Availability, booking, callback and WhatsApp tools land in Phase 10.)
+
+  > **`check_availability` moved to Phase 10.** This list previously named it *and* Phase 10's deliverables named it, so the tool was assigned to two phases at once while [AGENT_ARCHITECTURE §3.4](AGENT_ARCHITECTURE.md#34-the-v1-tool-set) assigned it to Phase 10 alone. Resolved in favour of Phase 10 for a reason stronger than tidiness: `check_availability` must return **opaque platform-issued slot ids** and `book_meeting` must accept **only** an id issued during the same call ([PRD §6.4](../PRD.md#64-tools), [SECURITY §5.3](SECURITY.md)). That is **one mechanism**, and the invariant "the model may echo an id, never originate one" is only testable when both halves exist. Phase 3 also has no `CalendarProvider` and no `meetings` table, so a Phase-3 `check_availability` could not be checked against real availability — it would return a schedule template under a name that promises more. Phase 3 is therefore 12 tools and Phase 10 is five; 12 + 1 + 5 = 18.
 - RiseNext seeded **as a tenant, through the ordinary org/knowledge APIs** — no `risenext_*` module, no `if org == "risenext"`.
 
 **Done when**
@@ -564,6 +655,7 @@ Deliverables and evidence are listed under [Completed](#completed). Done when `u
 **Deliverables**
 
 - `MessagingProvider` over Exotel WhatsApp (`POST /v2/accounts/{sid}/messages`, same Basic auth as voice) with template compliance and delivery-status tracking: `send_whatsapp`, `send_service_brochure`.
+- **`check_availability`** — moved here from Phase 3, because it is one half of a single mechanism whose other half is `book_meeting` (see the note in Phase 3). It is one of this phase's **five** tools.
 - `check_availability` / `book_meeting` against **real** availability with duplicate-booking prevention and explicit timezone handling. `check_availability` returns **opaque slot ids issued by the platform**; `book_meeting` accepts **only** an id the platform issued during this same call and rejects anything else. The model may echo an identifier back; it may never originate one.
 - `schedule_callback` with careful relative-date resolution (*"Friday evening"* → a concrete IST timestamp) and a **confirmation turn when the reference is ambiguous**.
 - Idempotency keys on every one of these; `tool_executions` rows for all of them.

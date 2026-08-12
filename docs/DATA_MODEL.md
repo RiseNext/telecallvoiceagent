@@ -334,7 +334,8 @@ The previously-recorded `halfvec(1536)` was not a measured choice:
 The simplest thing that is correct: one `document_chunks` table, tenant-scoped, **exact (non-ANN) search**. At single-digit tenants with modest corpora that is 100% recall and zero exposure to the filtered-ANN trap in §7. An index is added when a measurement says exact search is too slow.
 
 ```sql
--- ILLUSTRATIVE and INCOMPLETE — the embedding column's type is D-8.
+-- ILLUSTRATIVE and INCOMPLETE. The embedding column's type and the physical key
+-- layout are BOTH open decision D-8 -- see the note below the block.
 CREATE TABLE document_chunks (
     id               uuid NOT NULL,
     organization_id  uuid NOT NULL,
@@ -348,10 +349,38 @@ CREATE TABLE document_chunks (
     embedding_model  text NOT NULL,    -- recorded from the first migration, not later
     embedding_dim    int  NOT NULL,
     embedded_at      timestamptz,
-    created_at       timestamptz NOT NULL DEFAULT now(),
-    PRIMARY KEY (organization_id, id)
+    created_at       timestamptz NOT NULL DEFAULT now()
+    -- PRIMARY KEY   -- D-8 / ADR-011. See below.
 );
 ```
+
+> **The physical key layout is D-8-dependent and is NOT decided here.**
+>
+> An earlier revision of this block specified `PRIMARY KEY (organization_id, id)`. That
+> composite key existed for exactly one reason: **a partitioned table requires the
+> partition key in every unique constraint**, and the design at the time was
+> `PARTITION BY LIST (organization_id)`. [ADR-010](DECISIONS/ADR-010-defer-vector-storage-layout.md) withdrew the partitioning, so the *reason* for the composite key
+> went with it — but the key stayed in the sketch and started reading as a decision.
+>
+> It is also the one place the whole schema would deviate from its own base class:
+> every other table uses `id` as the primary key plus a `UNIQUE (organization_id, id)`
+> that serves as the composite-FK target.
+>
+> **Both options remain open, and the choice belongs to ADR-011** because it depends on
+> D-8's answer to partitioning:
+>
+> | If D-8 says | Then |
+> |---|---|
+> | no partitioning (the ADR-010 starting position) | `id` PK + `UNIQUE (organization_id, id)`, consistent with every other table |
+> | partitioning is justified by a measurement | `PRIMARY KEY (organization_id, id)`, because Postgres requires the partition key in it |
+>
+> **What is NOT open, under either layout:** `organization_id` is `NOT NULL`, the table
+> is tenant-owned, the parent references are **composite** foreign keys
+> (`(organization_id, document_id) → documents (organization_id, id)`) so cross-tenant
+> parentage is impossible in the database, and the tenant predicate is applied inside the
+> single `<=>`-issuing function from a `TenantContext` rather than a parameter. Tenant
+> ownership and cross-tenant isolation are mandatory regardless of which physical key
+> lands — they do not depend on the key at all, and they never did.
 
 **`embedding_model` and `embedding_dim` are recorded from day one.** They cost almost nothing and they are what makes model migration and coexistence tractable at all.
 
@@ -424,9 +453,38 @@ The tempting alternative is `CREATE INDEX ... ON document_chunks USING hnsw (emb
 3. **Tenant onboarding becomes DDL.** Creating an index at signup means running `CREATE INDEX` in the request path (or a job), taking locks on a live table, with no transactional rollback story. Partitions have the same issue but at a far lower rate, because only *promoted* tenants get one.
 4. **Catalog and autovacuum bloat** scale with index count, and `pg_class`/`pg_index` growth is felt by everything, not just this table.
 
-### The single retrieval helper
+### The single retrieval helper — and the two layers it is split across
 
-Every vector read in the platform goes through one function in `rn_persistence`. Nothing else may issue a `<=>` query, and that is a review rule.
+> **This subsection is the authoritative statement of where retrieval lives.** Earlier
+> prose put the helper in `rn_persistence` ([ADR-006](DECISIONS/ADR-006-pgvector-tenant-isolation-and-embeddings.md), this document, `packages/persistence/README.md`) and other prose put it in `rn_services` ([AGENT_ARCHITECTURE §5.2](AGENT_ARCHITECTURE.md), [ROADMAP](ROADMAP.md) Phase 1). Both were describing something real and neither was complete. The resolution is that **there are two things, at two layers, with two different jobs** — and conflating them is what made the documents disagree.
+
+**Business retrieval orchestration is not the SQL vector-search implementation.**
+
+| | Orchestration | Implementation |
+|---|---|---|
+| Where | `rn_services` — a retrieval **service** / use case | `rn_persistence` — one **function** |
+| Job | embed the query text through `EmbeddingProvider`; resolve which knowledge bases are in scope from the agent version's bindings; apply the active embedding model/width; decide `k`; shape the result for a tool envelope; emit the `recall_warning` / underfill signal | build and issue exactly one parameterised SQL statement: the tenant predicate, the knowledge-base filter, the model/width filter, the `documents.status = 'active'` join, the `SET LOCAL` tuning, the `<=>` ordering, the over-fetch and trim |
+| Knows about | tenants, agent versions, embedding providers, tool semantics | SQL, pgvector, `SET LOCAL`, transactions |
+| Knows nothing about | SQL or pgvector | why the caller wants these chunks |
+| How many | as many callers as need retrieval | **exactly one** |
+
+Why the split, rather than one function in either layer:
+
+- **`<=>` and `SET LOCAL` are pgvector- and transaction-specific.** They belong at the persistence boundary for the same reason every other query does — putting them in `rn_services` would make the business layer the place SQL is written, and there is nowhere below it to enforce anything.
+- **`rn_agent` may not import `rn_persistence` at all** (import-linter contract *"Agent layers reach domain data only through `rn_services`"*). A tool therefore *cannot* reach the persistence function; it reaches the service, which is exactly the layering the contract exists to produce.
+- **Tenant scoping has to be structurally unavoidable, not merely applied.** The persistence function takes its `organization_id` from the `TenantContext` its repository was constructed with — there is no parameter by which a caller supplies a tenant, so there is nothing to pass wrongly. The orchestration layer cannot widen that scope even if it wanted to.
+
+**The invariant, stated precisely, and it is the one to enforce in review:**
+
+> **Exactly one function in `rn_persistence` may construct or issue a `<=>` query** (or a pgvector distance helper equivalent to one). Everything else — `rn_services`, `rn_agent`, `rn_api`, `rn_voice`, `rn_worker`, a job, a script, a test — goes through it. A raw ORM vector query anywhere else is a review stop.
+
+Phase 3 Stage 2 makes that mechanical rather than a rule people remember: a structural test greps the tracked source for `<=>`, `cosine_distance`, `l2_distance`, `max_inner_product` and `.op("<=>")`, and asserts the only match is inside that one module.
+
+**Neither half exists yet.** The physical schema it queries is open decision **D-8**, so the function cannot be written until [ADR-011](research/D8_BAKEOFF.md) fixes the column type and width. What Stage 1 delivered is the layer *below* both: the `EmbeddingProvider` seam that the orchestration layer will call.
+
+---
+
+Every vector read in the platform goes through that one function in `rn_persistence`. Nothing else may issue a `<=>` query, and that is a review rule made mechanical by the test above.
 
 ```sql
 -- ILLUSTRATIVE: what the helper emits, per call, inside its own transaction

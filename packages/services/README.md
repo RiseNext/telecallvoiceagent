@@ -5,6 +5,7 @@ The business use cases. This is where "what the product does" lives, and it is s
 ## Owns
 
 - Use cases: campaign import and dispatch, contact and lead management, knowledge ingestion and retrieval, call lifecycle, meeting and callback booking, messaging, analytics queries, export generation.
+- **Retrieval orchestration** — embedding a query through `EmbeddingProvider`, resolving which knowledge bases an agent version has in scope, choosing `k`, shaping the result for a tool envelope. It is the **only** caller of the one `<=>`-issuing function in `rn_persistence`, and it contains no SQL: business retrieval orchestration and the SQL vector-search implementation are two different things at two layers. See [DATA_MODEL §7](../../docs/DATA_MODEL.md#the-single-retrieval-helper--and-the-two-layers-it-is-split-across). *(Neither half exists yet — the physical schema is open decision D-8.)*
 - The **authorization policy layer** — resource-oriented checks (`may this actor do X to this resource`), not conditionals scattered through route handlers.
 - The **pre-dial compliance gate** — the ordered checks a contact must pass before a dial is enqueued.
 - The **transactional outbox** — a state change and its intent-to-publish written in one transaction.

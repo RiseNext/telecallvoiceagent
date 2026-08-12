@@ -226,7 +226,8 @@ Two Postgres details that make or break this:
 
 Retrieval is the isolation layer people get wrong, because its failure is quiet.
 
-- All vector search goes through **one** `vector_search()` helper. It always opens a transaction, always issues `SET LOCAL`, and always applies the tenant predicate. There is no second path. A raw ORM vector query in a PR is a review stop.
+- All vector search goes through **one** `<=>`-issuing function in `rn_persistence`. It always opens a transaction, always issues `SET LOCAL`, and always applies the tenant predicate — taken from the `TenantContext` its repository was constructed with, so there is no parameter by which a caller could supply a tenant. There is no second path. A raw ORM vector query in a PR is a review stop.
+- Callers reach it through a retrieval **service** in `rn_services`. That is orchestration — embedding the query, resolving which knowledge bases are in scope, shaping the result — and it is *not* where the SQL lives. The security consequence of the split: a tool in `rn_agent` cannot reach the persistence function even in principle, because the import contract forbids `rn_agent` from importing `rn_persistence` at all. See [DATA_MODEL §7](DATA_MODEL.md#the-single-retrieval-helper--and-the-two-layers-it-is-split-across).
 - [HC-25] is a *correctness* trap rather than a leak: with an approximate index, the tenant filter is applied after the index scan, so a scoped query silently returns too few rows — the agent appears to have forgotten its knowledge base. The tiered index strategy in [DATA_MODEL.md](DATA_MODEL.md) exists for this.
 - The security consequence to hold onto: **if the filter is ever moved out of the helper "for performance", the failure flips from under-returning to cross-tenant returning.** Keep them in the same function.
 
@@ -258,8 +259,9 @@ Prompts are a *quality* control (staying on topic, tone, AI disclosure). They ar
 Handling:
 
 - Retrieved text enters the context **fenced and labelled as quoted data** — content to answer *from*, never instructions to follow. The system instruction states this explicitly, and the same rule applies to tool results.
-- Knowledge ingestion strips or neutralises text that is structurally addressed to a model (imperative instruction blocks, injected role markers, embedded system-prompt syntax) at chunk time, and records the fact on the chunk so it can be reviewed. Do not repair the text silently.
+- Knowledge ingestion **flags** text that is structurally addressed to a model — imperative instruction blocks, injected role markers, embedded system-prompt syntax — and records the finding for review. `rn_domain.sanitisation.inspect_content` is **flag-only and never rewrites**, deliberately: silently repairing a tenant's document means the copy we serve is not the copy they uploaded, and a stripped passage that still reads plausibly is harder to review than a flagged one. §5.5 says the same thing about parsed document content; if these two ever disagree again, the implementation is the tie-breaker.
 - **Neither of these is a defence.** They reduce the rate. The actual defence is that a successful injection can only make the model *request* things it was already allowed to request.
+- **The Hindi and Telugu detection patterns are synthetic and unreviewed.** They were authored, not derived from observed attacks, and no native speaker has assessed them. Their recall is **unknown and must not be quoted as coverage** — a per-language detection figure for this module would be a number nobody measured. They belong in the same review pass as the D-8 phrasebook, which has not covered them ([D8_BAKEOFF.md](research/D8_BAKEOFF.md) §4).
 
 ### 5.3 The gate every tool call passes through
 
@@ -268,7 +270,7 @@ The pipeline is in [ARCHITECTURE.md §5](ARCHITECTURE.md); here is what each sta
 | Stage | Defends against |
 |---|---|
 | **Is this tool enabled for this agent AND this organization?** | A model inventing a tool name, or a tool leaking across tenants via a shared registry. The binding is data in our DB, not a list in a prompt. |
-| **Pydantic schema validation, strict** | Type confusion, oversized strings, unbounded lists, injection into downstream string handling. Reject; do not coerce. |
+| **Pydantic schema validation — `extra="forbid"`, `frozen=True`, per-field bounds** | Unknown fields, oversized strings, unbounded lists, out-of-range values, injection into downstream string handling. See §5.5 for what is and is not refused. |
 | **Server-side context injection** | Everything in §4.1. `organization_id`, `call_id`, `agent_version_id` come from the session context via `ToolRuntime` and are **excluded from the JSON schema the model sees** — the model cannot supply them because it does not know they exist. |
 | **Idempotency / rate / consent gate** | A model that calls `send_whatsapp` in a loop, a retried tool after a socket blip, an action against an opted-out contact. |
 | **Business service** | The actual authorization decision, via the same policy layer as the API (§3). |
@@ -294,6 +296,35 @@ The response, in order:
 6. **For knowledge-content injection: quarantine the chunk**, exclude it from retrieval, and notify the tenant admin. That content is served to every future call until someone removes it.
 
 PRD §13 lists *"zero cross-tenant data access in an adversarial test, including prompt-injection attempts"* as a V1 success criterion. That test is owned by [TESTING.md](TESTING.md) and it is a release gate, not a nice-to-have.
+
+### 5.5 Where coercion is permitted, and where it is refused
+
+"Validate strictly" is not one policy — it is a different answer per boundary, and stating
+it as one policy is how a document ends up claiming a guarantee the code does not make.
+The distinction that matters: **coercion is acceptable where a wrong value is still
+bounded and the cost of refusing is a worse product; it is unacceptable where a wrong
+value is silently stored or silently changes a result.**
+
+Implemented today:
+
+| Boundary | Policy | Coercion | Why |
+|---|---|---|---|
+| **Tool arguments** (`rn_agent.tools.base.ToolArgs`) | `extra="forbid"`, `frozen=True`, per-field bounds | **permitted** | A model emitting `"5"` for an integer is routine, and refusing costs a retry the caller hears as silence. Safety comes from every field carrying a bound, so a coerced value is still in range. A field that cannot tolerate it sets `strict=True` on itself. |
+| **Server-injected context** in tool args | stripped before validation, security event recorded | n/a — **discarded** | `extra="forbid"` alone would report a forged `organization_id` as an ordinary validation error and the *signal* would be lost. |
+| **Embedding provider responses** (`rn_providers.embeddings`, `.openai_embeddings`) | **refuse, do not coerce** | **refused** | A vector of the wrong width, wrong count, non-numeric or non-finite value is refused outright. This one is stored in a typmod'd Postgres column and a NaN would make every distance comparison against that row silently false — removing it from results rather than erroring. |
+| **Stored agent configuration** read from JSONB (`rn_agent.snapshot`) | parsed once at the boundary into frozen typed objects; malformed value raises `AgentConfigurationError` | **refused** | Stored tenant configuration is untrusted input like any other. Failing here beats surfacing a `KeyError` three layers up mid-call. |
+| **Benchmark dataset** (`tests/d8_bakeoff/dataset.py`) | refuse on any inconsistency | **refused** | A half-loaded dataset produces a half-measured benchmark, and the failure would present as an unexplained score difference rather than an error. |
+| **Application settings** (`rn_core.settings`) | typed, bounded, environment-validated; refuses to boot when unsafe | mostly refused | A process running with half its configuration fails later, partially, usually mid-call. |
+
+Required of Phase 3 Stage 2, **not yet built**:
+
+| Boundary | Requirement |
+|---|---|
+| **Ingestion request models** (upload / re-index / delete) | `extra="forbid"`, explicit size and count bounds, declared MIME/type allowlist. Reject; do not coerce — an ingestion request names a tenant's document set and a coerced field there changes *which* documents are affected. |
+| **Parsed document content** | Not validated *as a schema* — it is arbitrary tenant text. It is **normalised** (`rn_domain.text`) and **flagged, never rewritten** (`rn_domain.sanitisation`, §5.2). "Strict" is the wrong frame; the guarantee is that we do not silently alter it. |
+| **Persisted chunk metadata** (`document_chunks.metadata` JSONB) | Validated at the write boundary and re-parsed on read rather than trusted, following the `AgentSnapshot` precedent. JSONB is permitted only where the shape is genuinely open, and **nothing a dashboard filters on may live only there** (DATA_MODEL §1). |
+| **Retrieved chunk text reaching the model** | Not a validation boundary at all — it is fenced and labelled untrusted data (§5.2). No schema makes hostile prose safe; the structural controls do. |
+| **The 12 Phase-3 tool argument models** | Same policy as every other tool: `extra="forbid"`, per-field bounds, no UUIDs in the schema, no argument name colliding with `INJECTED_CONTEXT_KEYS`. The registry refuses the declaration at import otherwise, so this is enforced rather than requested. |
 
 ---
 

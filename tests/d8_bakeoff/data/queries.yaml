@@ -1,0 +1,16 @@
+# SEED QUERIES — RETIRED 2026-08-11. Deliberately empty.
+#
+# The 26 hand-written queries that went with `corpus.yaml`'s seed passages. They
+# were removed together, and they had to be: a query whose gold passages no
+# longer exist is a dangling reference the loader refuses outright, so retiring
+# one half without the other would not have loaded at all.
+#
+# See `corpus.yaml` for why. Short version: they were `non_decision_synthetic`,
+# and the official Rise Next material now carries the corpus on its own.
+#
+# Real queries are generated from `source/phrasebook.yaml` into
+# `generated_queries.yaml`, where each one carries `derived_from` back to a
+# reviewable template.
+
+dataset_version: 3
+queries: []

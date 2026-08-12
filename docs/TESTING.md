@@ -80,6 +80,8 @@ This was verified rather than assumed: a temporary `live`-marked test was added,
 | Location | Contains |
 |---|---|
 | `tests/unit/` | `unit` tests for every package. **Centralised, not per-package** — see the note below. |
+| `tests/integration/` | `integration` tests: repositories, migrations, schema invariants, against an ephemeral PostgreSQL started by testcontainers. |
+| `tests/d8_bakeoff/` | **The D-8 embedding bake-off** — not only tests. It is the evaluation corpus, its generator, the retrieval harness, the metrics, the candidate manifest and fifteen corpus quality gates, plus the suite that exercises all of it. See [research/D8_BAKEOFF.md](research/D8_BAKEOFF.md) and the note in §8. |
 | `apps/<app>/tests/` | app-level wiring: route auth, dependency graph, gateway session lifecycle. |
 | `tests/contract/` | the conformance suites of §3.4 — one suite, run against fake and (opt-in) real. |
 | `tests/e2e/` | cross-plane flows: campaign → dial → bridge → tool → finalize → outbox → worker → dashboard read. All providers faked. |
@@ -133,7 +135,44 @@ Not `tests/fakes/`. Three reasons, in order of importance:
 2. **The apps import them.** `PROVIDER_MODE=fake` wires the whole platform to fakes, so `uv run uvicorn rn_voice.main:app` plus a synthetic caller gives a working, clickable product with zero credentials. This is how new engineers onboard and how the frontend is developed. A fake that only exists inside `tests/` cannot do that.
 3. **Ownership.** Code in `packages/` has a reviewer. Code in `tests/fixtures/` becomes nobody's.
 
-**Safety interlock:** each fake asserts at construction that `settings.environment != "production"` unless `RN_ALLOW_FAKE_PROVIDERS_IN_PROD=1` is explicitly set (for a break-glass smoke test). Shipping a fake telephony provider to production must be loud.
+**Safety interlock — one policy, and it is NOT in the fakes.**
+
+> An earlier revision of this paragraph said "**each fake** asserts at construction that
+> `settings.environment != "production"` unless `RN_ALLOW_FAKE_PROVIDERS_IN_PROD=1`".
+> Neither implemented fake does that, so the paragraph described a control that did not
+> exist. Resolved deliberately, in favour of correcting the document, and the reasoning is
+> worth keeping because the obvious reading is the wrong one.
+
+**The policy: fakes are environment-agnostic and pure. The production interlock lives at
+the single provider factory in the composition root**, which is the one place that reads
+`PROVIDER_MODE` and decides between a fake and a real adapter. It arrives with that
+factory in **Phase 4**, alongside the first fakes that could actually do damage
+(telephony, realtime voice).
+
+Three reasons it belongs there and not in each constructor:
+
+1. **A per-fake check would make constructing a fake load and validate the entire
+   application configuration.** `get_settings()` reads `.env` and the process
+   environment and raises when anything is invalid — so `FakeEmbeddingProvider(dimensions=8)`
+   in a unit test would start depending on ambient machine state. That is precisely what
+   `tests/conftest.py` exists to eliminate ("no `.env` is read, no local database is
+   assumed"), and it would trade a real property — determinism — for a check that fires
+   in an environment the unit test is not in.
+2. **It is N places to get right instead of one.** Eight seams means eight constructors,
+   and the one somebody forgets is the one that ships.
+3. **The realistic failure is the *wiring* choosing a fake, not a fake being
+   constructed.** `PROVIDER_MODE=fake` in a production environment is one decision in one
+   place, and that is where a loud refusal belongs. A fake object is inert; a factory that
+   hands one to the dial path is not.
+
+**Enforced now, so the policy is not just stated:** `tests/unit/test_framework_independence.py`
+asserts that every provider fake is constructible with **no environment at all** and reads
+no application settings. If someone adds a settings read to a fake, that test fails and
+names the fake — which also means the policy cannot drift into being inconsistent across
+fakes, because the assertion iterates all of them.
+
+Today the interlock protects nothing either way: nothing in `apps/` constructs a fake,
+because `apps/` has no entrypoints yet.
 
 ### 3.2 `FakeTelephonyProvider` — replay in, assertion out
 
@@ -257,7 +296,9 @@ These are cheap, fast, and catch the bugs that are most expensive in production 
 
 **Time.** Every date-resolution test runs under `freezegun` with an explicit IST reference instant, and `ruff`'s `DTZ` rules ban naive datetimes at lint time. Cases: "Friday evening" resolved on a Thursday, on a Friday morning, on a Friday at 8 PM (past — must roll forward and the agent must confirm); "tomorrow" across midnight; "next month" on the 31st; "day after" in Hindi and Telugu; a request that is ambiguous, which must produce a *confirmation request*, not a guess. Callback resolution and calling-window evaluation share the same clock seam so they cannot disagree.
 
-**Tool argument validation (`rn_agent`).** For every tool in the registry: valid args round-trip; missing required field rejected; wrong type rejected; extra field rejected (`strict=True`); an injected `organization_id`, `call_id` or `agent_version_id` in model output is **ignored** and raises a security event; enum values outside the catalogue rejected. Plus one meta-test that iterates the registry and fails if any tool lacks a schema, a description, or a permission binding — so a new tool cannot be added untested. The V1 registry will hold **18 tools**, and the meta-test asserts that count so a silent addition or removal is visible in a diff — **from Phase 10**, when the last of them lands. Asserting 18 earlier would fail by construction: the tools arrive across Phases 3, 9 and 10, and each needs a permission that does not exist in the frozen catalog yet. Phase 2 asserts the count it actually has (its two READ-only built-ins) so that an unplanned third tool is still visible in a diff, and runs the schema/description/permission meta-test over whatever is registered. `record_opt_out` is one of the 18 and is **not** interchangeable with `mark_not_interested`: the former writes a durable, cross-campaign suppression, the latter records a sales-interest signal, and there is an explicit test that asserting one does not produce the effect of the other.
+**Tool argument validation (`rn_agent`).** For every tool in the registry: valid args round-trip; missing required field rejected; **extra field rejected (`extra="forbid"`)**; an injected `organization_id`, `call_id` or `agent_version_id` in model output is **stripped and a security event recorded** *before* validation runs, so the injection attempt is a signal rather than an ordinary validation error; enum values outside the catalogue rejected; every field's own bound (`ge`, `le`, `max_length`) enforced.
+
+> **`ToolArgs` is `extra="forbid"` and `frozen=True`. It is deliberately NOT Pydantic `strict=True`,** and an earlier revision of this line said it was. The reason is on the page in `rn_agent/tools/base.py`: models routinely emit `"5"` for an integer field, and on a phone call a rejected argument costs a retry round-trip the caller hears as silence. So lax coercion is wanted, and the safety comes from somewhere else — **every field carries its own bound**, so a coerced value still has to be in range. A tool that genuinely cannot tolerate coercion sets `strict=True` on *that field* and says why. What the tests assert is therefore "an out-of-range or unknown field is rejected", not "a numeric string is rejected". See §11 for which boundaries *do* refuse coercion. Plus one meta-test that iterates the registry and fails if any tool lacks a schema, a description, or a permission binding — so a new tool cannot be added untested. The V1 registry will hold **18 tools**, and the meta-test asserts that count so a silent addition or removal is visible in a diff — **from Phase 10**, when the last of them lands. Asserting 18 earlier would fail by construction: the tools arrive across Phases 3, 9 and 10, and each needs a permission that does not exist in the frozen catalog yet. Phase 2 asserts the count it actually has (its two READ-only built-ins) so that an unplanned third tool is still visible in a diff, and runs the schema/description/permission meta-test over whatever is registered. `record_opt_out` is one of the 18 and is **not** interchangeable with `mark_not_interested`: the former writes a durable, cross-campaign suppression, the latter records a sales-interest signal, and there is an explicit test that asserting one does not produce the effect of the other.
 
 **Agent state transitions.** The session state machine is owned by [AGENT_ARCHITECTURE.md](AGENT_ARCHITECTURE.md) §2, and the tests use its names verbatim: the main path is **Resolving → Opening → Greeting → Listening → Thinking → Speaking → ToolCalling → WrapUp → Finalizing**, plus the three off-path states **Degrading**, **Rebuilding** and **Failing**. Encode it as an explicit table of legal transitions, with a test asserting that every illegal transition raises rather than silently no-ops. Terminal states are absorbing. `Finalizing` must be reachable from every state, including `ToolCalling` (the caller can hang up mid-tool — PRD §6.2).
 
@@ -288,10 +329,14 @@ These are cheap, fast, and catch the bugs that are most expensive in production 
 
 **Tenant scoping — including a test that proves a missing scope fails.** This is the one that stops the security bug rather than documenting it.
 
-The repository base class takes a `TenantScope` value object (constructed only from a verified `AuthContext`) rather than a bare UUID, so "forgot to scope" is usually a type error. On top of that:
+`TenantScopedRepository` is constructed with a **`TenantContext`** (built only by `rn_services.build_tenant_context` from a *verified membership row*) rather than a bare UUID, and no read method accepts an `organization_id` at all — so "forgot to scope" is not a mistake the API allows. Cross-tenant access requires a different type (`PlatformContext`) and a differently named class (`PlatformRepository`), so it shows up in a grep and in a diff. On top of that:
 
-1. A **negative test** constructs a query bypassing the scoping helper and asserts it raises `UnscopedQueryError` — the repository base intercepts a tenant-owned entity queried without a scope. This test exists to fail if someone "simplifies" that guard away.
-2. A **schema audit test** enumerates every table in the metadata, and for each table tagged tenant-owned asserts: an `organization_id` column exists, it is `NOT NULL`, it has a foreign key, and an RLS policy exists on the table. A new table without these fails CI. This is how the rule survives the sixth month.
+> **Terminology corrected.** An earlier revision of this section named a `TenantScope` value object, an `AuthContext`, and an `UnscopedQueryError`. **None of those exist.** The implemented names are `TenantContext` / `PlatformContext` (`rn_domain.tenancy`), `Principal` + `build_tenant_context` (`rn_services.authorization`), and `TenantScopedRepository` / `PlatformRepository` (`rn_persistence.repositories.base`). The classes were not invented to satisfy the prose; the prose was corrected to describe what Phase 1 actually built.
+
+1. A **type-level guard, not a runtime one.** `TenantScopedRepository[ModelT: TenantOwnedBase]` is bound to models that provably carry an `organization_id`, so the tenant predicate is type-checked rather than asserted — a model without a tenant key cannot be used with the class at all. `__init__` additionally rejects a non-`TenantContext` at runtime, which catches the realistic mistake of passing a `PlatformContext` because it "also has permissions". There is no `UnscopedQueryError` because there is no code path that produces an unscoped query to raise it: every query starts from `_scoped()`, and `find()` deliberately uses a filtered `SELECT` rather than `session.get()`, which would return another tenant's row straight from the identity map without touching the database. `tests/integration/test_tenant_isolation.py` is the executable form of this.
+2. A **schema audit test** enumerates every table in the metadata, and for each table tagged tenant-owned asserts: an `organization_id` column exists, it is `NOT NULL`, and it has a foreign key. A new table without these fails CI. This is how the rule survives the sixth month.
+
+   > **The RLS clause of this bullet is Phase 15, not now.** An earlier revision also required "an RLS policy exists on the table", which contradicted [DATA_MODEL §4.2](DATA_MODEL.md) ("**NOT IMPLEMENTED IN PHASE 1** … Row-level security lands in **Phase 15**") and [ROADMAP](ROADMAP.md)'s Phase-15 assignment. Read literally it made every new tenant-owned table — `document_chunks` included — require a policy, i.e. it pulled Phase 15 into Phase 3. Phase 3's isolation is `TenantContext` plus `TenantScopedRepository` plus composite tenant foreign keys plus the adversarial cross-tenant suite; the RLS assertion is added in Phase 15 alongside the policies themselves.
 3. A **data test** seeds two organizations with identical-looking data and, for every repository method, asserts org A's context returns only org A's rows — driven by reflection over the repository classes so a new method is covered by default.
 4. **RLS itself** is tested on a **direct** (non-pooled) connection with `SET LOCAL`, because Neon's PgBouncer runs `pool_mode=transaction` and session-level `SET` is unsupported (HC-26). A test that sets the tenant GUC on a pooled connection and asserts it does *not* leak into the next transaction is worth writing once — it encodes the trap.
 5. **Vector retrieval scoping**, which is the subtle one: HC-25 means a filtered ANN query silently under-returns. Test with a tenant holding 200 chunks inside a corpus of 200 000 and assert the scoped query returns the full `LIMIT`, not four rows. Assert the retrieval helper always opens a transaction and issues `SET LOCAL hnsw.iterative_scan`. Assert that a query issued *outside* the helper is rejected.
@@ -424,6 +469,27 @@ What we do instead: judge scores are a **release signal**. Promoting an agent ve
 ---
 
 ## 8. Multilingual and code-switching test data
+
+**There are two multilingual corpora, they answer different questions, and only one of
+them is blocked.** Conflating them is easy and expensive: it makes a text-retrieval
+question look like it needs speaker consent, or an acoustic question look like it can be
+authored.
+
+| | **Authored text** — `tests/d8_bakeoff/` | **Recorded audio** — this section |
+|---|---|---|
+| Answers | can retrieval find the right passage from a Hindi/Telugu/code-mixed *question* | can STT transcribe a real Indian phone call |
+| Content | 143 passages, 804 queries across 8 subsets, all decomposed from supplied Rise Next material | ~1,100 utterances from real speakers |
+| Human input | native-speaker *review* of authored text — **done, 2026-08-11** | recording sessions with consent artefacts — **not started** |
+| PII | none — no person is recorded | real speech from identifiable people; DPDP applies |
+| Blocked by | nothing (D-8's remaining blockers are business content and a methodology decision) | **T-D2**, downstream of D-1/D-3/D-5 |
+
+**T-D2 does not block the D-8 corpus**, and that is the practical point of separating them:
+the retrieval half of the multilingual problem was fully answerable without recording
+anybody, and it has been answered. What is *not* transferable is acoustics — a corpus of
+authored Devanagari sentences says nothing about whether Sarvam transcribes a Telangana
+speaker on a noisy 8 kHz line.
+
+The rest of this section is about the **audio** corpus.
 
 **Synthesised audio will not do, and we should be explicit about why.** TTS output is clean, single-language, correctly pronounced, wideband, has no crosstalk, and no codec artefacts. A pipeline tuned until it passes on TTS audio will still fail on a call. Worse, evaluating Sarvam STT on Sarvam TTS output is circular: the same vendor's acoustic assumptions on both ends.
 
@@ -587,7 +653,7 @@ Coverage is a signal, not a target — with one exception: `rn_domain` and `rn_a
 |---|---|
 | a tool | schema tests (§4), a registry meta-test entry, an agent_eval scenario if it has an external effect, an idempotency test |
 | a repository method | a two-org scoping test (the reflection-driven suite should pick it up — verify it did) |
-| a table | it must pass the schema audit test (§5): `organization_id`, FK, `NOT NULL`, RLS policy |
+| a table | it must pass the schema audit test (§5): `organization_id`, FK, `NOT NULL`. **The RLS policy is Phase 15** — see the note in §5 |
 | a provider adapter | a `provider` test against a fake transport **and** an entry in the contract suite |
 | a webhook handler | idempotency, replay, out-of-order, malformed payload |
 | a job | ack/retry/DLQ behaviour and an exactly-once external-effect test |

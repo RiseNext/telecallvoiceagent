@@ -25,6 +25,7 @@
 | E-3 | §5 Vector index / Checkpoint hardening | Column called `tenant_id` | **Renamed.** The platform-wide column name is `organization_id` | DATA_MODEL.md |
 | E-4 | §5 Vector index | `PARTITION BY LIST(tenant_id)` **with hash sub-partitioning** to bound partition count | **Diverges** from the accepted Phase 1 design: LIST partitioning + a DEFAULT partition, per-tenant promotion above a threshold; hash sub-partitioning kept only as a future mitigation | ADR-006, DATA_MODEL.md |
 | E-5 | §2 sample-rate table & latency budget | 24000 Hz row: "Min-chunk latency (3200 B) … **66.7 ms**" | **Superseded** by ADR-003: smallest legal emission at 24 kHz is **3840 B = 80 ms** | ADR-003, REALTIME_VOICE.md |
+| E-6 | §5 Chosen Defaults — **Embedding model**, **Vector index**, **Tenant isolation** rows | `text-embedding-3-small` @ 1536 stored as `halfvec(1536)`; tiered index with `PARTITION BY LIST(tenant_id)` + hash sub-partitioning; "LIST partitioning **for performance**" | **WITHDRAWN / SUPERSEDED. These are not chosen and must not be implemented.** [ADR-010](../DECISIONS/ADR-010-defer-vector-storage-layout.md) withdrew both the `halfvec(1536)` column and the LIST partitioning, and records them as open decision **D-8**. The model, width, column type, ANN index, partitioning **and `document_chunks`' physical primary key** are all pending measurement. | [ADR-010](../DECISIONS/ADR-010-defer-vector-storage-layout.md) supersedes the Decision of [ADR-006](../DECISIONS/ADR-006-pgvector-tenant-isolation-and-embeddings.md); status and blockers in [D8_BAKEOFF.md](D8_BAKEOFF.md) |
 
 **E-1 notes.** The following §4 pins also resolved *exactly* as predicted, so §4's confidence tags there held up: `langchain` 1.3.14, `langchain-core` 1.5.1, `langgraph` 1.2.9, `langgraph-checkpoint-postgres` 3.1.0, `taskiq` 0.12.4, `openai` 2.49.0, `soxr` 1.1.0.
 
@@ -33,6 +34,39 @@
 **E-4 notes.** The divergence is deliberate: hash sub-partitioning multiplies the partition count for *every* tenant to solve a problem only an outsized tenant has. A DEFAULT partition absorbs the long tail of small tenants at one partition, and a tenant is promoted to its own partition once it crosses a size threshold. Sub-partitioning a single promoted partition remains available later without a redesign.
 
 **E-5 notes.** At 24 kHz the alignment quantum must be **960 bytes**, not 320: 320 B at 24 kHz is 6.667 ms, and accumulating playback in 6.667 ms units makes `audio_end_ms` drift, which silently corrupts barge-in truncation (**HC-7**). The minimum emission is therefore the smallest multiple of 960 that is ≥ 3200 B → **3840 B = 80 ms** (3840 ÷ 48 000 B/s = 0.080 s). The 8 kHz figure is unaffected: 3200 B ÷ 16 000 B/s = **200 ms**. Note that §7 anti-fact #1 already warned that the byte thresholds are authoritative and the millisecond glosses unreliable — this is exactly that failure, and §2's own "Where resampling lives" paragraph already stated the 960-byte rule, so the table contradicted the prose.
+
+**E-6 notes — read this before implementing anything in §5's data-tier rows.**
+
+The withdrawn rows are the highest-risk stale content in this document, because they read
+as a settled design and they are three lines of SQL away from being irreversible. A reader
+who follows §5 would build `halfvec(1536)` with LIST partitioning; the dimension would
+become a Postgres typmod, and changing it later costs a **full paid re-embed of every
+tenant plus a table rewrite**, while partitioning cannot be usefully retrofitted at all.
+
+**What was withdrawn, and why** ([ADR-010](../DECISIONS/ADR-010-defer-vector-storage-layout.md) has the full argument):
+
+- **1536 was never evaluated on merit.** It is the native output width of
+  `text-embedding-3-small` — a vendor default adopted before measuring anything, on a
+  corpus that is English/Hindi/Telugu and code-mixed, against **L-8** in this very
+  document recording that no per-language Indic benchmark exists.
+- **`halfvec` was chosen to dodge a cap we are not near.** HC-24 binds only above 2000
+  dims. At 1536 *both* types are indexable, so the argument reduces to storage and build
+  time against an **unmeasured recall cost**.
+- **LIST partitioning is unjustified at single-digit tenants**, and it was the only reason
+  the previously-sketched composite primary key on `document_chunks` existed.
+
+**What survives from §5 and the surrounding sections, and is still authoritative:**
+**HC-24** (HNSW dimension caps), **HC-25** (filtered approximate search post-filters and
+silently under-returns — the single most important fact in the data tier), **HC-26**
+(transaction-mode pooling forbids session-level `SET`), **HC-27/HC-28** (Neon regions and
+scale-to-zero), the **two-DSN** split, the argument against partial-index-per-tenant
+(anti-fact 24), "vectors live in the same Postgres as everything else", and "RLS is
+defence in depth, not the isolation mechanism". None of that depends on the withdrawn
+choices, and all of it constrains whatever layout D-8 selects.
+
+Per this document's own rule, §5 itself is **left unedited**: everything below section 0
+is a deliberately-frozen 2026-07-28 snapshot whose value is the record of what was and
+was not verifiable that day. This errata row is the correction.
 
 ---
 

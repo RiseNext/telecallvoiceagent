@@ -1,0 +1,416 @@
+# =============================================================================
+# SPOT CHECKS - individual human judgements on generated queries.
+#
+# 76 queries, every one APPROVED by the Rise Next team on 2026-08-11, from the
+# consolidated review in review/HUMAN_REVIEW.md.
+#
+# -----------------------------------------------------------------------------
+# WHY THIS FILE EXISTS SEPARATELY FROM THE GENERATED QUERIES
+#
+# `data/generated_queries.yaml` is rewritten on every build. A decision recorded
+# there would survive exactly until the next rebuild and then vanish - silently,
+# with no error, leaving a subset that looks spot-checked and is not. Spot checks
+# are intake, like the phrasebook: hand-written, committed, reviewed like code.
+#
+# -----------------------------------------------------------------------------
+# WHAT A SPOT CHECK IS FOR
+#
+# Reviewing a TEMPLATE validates the phrasing of every query generated from it.
+# What it CANNOT validate is whether each SUBSTITUTION came out right: a frame
+# that reads perfectly with "website development" can be wrong with "cloud
+# migration". `quality.SPOT_CHECK_FRACTION` requires a fraction of every subset
+# to be judged individually, which turns template propagation from a loophole
+# into a sampling strategy.
+#
+# There is deliberately NO `needs_edit`. A generated query cannot be edited in
+# place; the next build overwrites it. If the wording is wrong, the TEMPLATE is
+# wrong - reject here and fix the template in its review bundle.
+#
+# A rejection OUTRANKS an approved template. A reviewer who looked at the actual
+# substitution and said no has seen more than a template-level approval did.
+# =============================================================================
+
+spot_checks:
+- query_id: q-cm-hi-cap-atom-ai-voice-agents
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-cm-hi-cap-atom-business-consultation
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-cm-hi-cap-atom-customer-support-automation
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-cm-hi-cap-atom-mortgage-guidance
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-cm-hi-cap-atom-real-estate-management-platforms
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-cm-hi-capability-ai-automation
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-cm-hi-capability-technology-solutions
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-cm-hi-out-of-scope
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-cm-hi-pricing-digital-marketing
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-cm-hi-what-is-admin-support
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-cm-te-cap-atom-ai-voice-agents
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-cm-te-cap-atom-business-consultation
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-cm-te-cap-atom-customer-support-automation
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-cm-te-cap-atom-mortgage-guidance
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-cm-te-cap-atom-real-estate-management-platforms
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-cm-te-guarantee
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-cm-te-how-long-loan-assistance
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-cm-te-out-of-scope
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-cm-te-pricing-digital-marketing
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-cm-te-technology
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-xs-deva-cap-atom-admin-dashboards
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-xs-deva-capability-digital-marketing
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-xs-deva-what-is-real-estate
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-en-cap-atom-admin-dashboards
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-en-cap-atom-ai-sales-assistants
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-en-cap-atom-application-processing-support
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-en-cap-atom-business-loan-assistance
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-en-cap-atom-compliance-assistance
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-en-cap-atom-crm-development
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-en-cap-atom-customer-support-operations
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-en-cap-atom-erp-solutions
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-en-cap-atom-hr-management-systems
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-en-cap-atom-meta-ads
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-en-cap-atom-performance-marketing
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-en-cap-atom-professional-photography
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-en-cap-atom-reels-creation
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-en-cap-atom-video-editing
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-en-capability-ai-automation
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-en-capability-technology-solutions
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-en-how-long-admin-support
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-en-how-long-real-estate
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-en-lending-approval-transpose
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: Approved as a test item. The letter transposition is generated transcription
+    noise, not a phrasing error - the sentence underneath it is one a caller would
+    say. Judging the damage rather than the sentence would reject the query and take
+    its template down with it.
+- query_id: q-en-pricing-canonical-branding-creative
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-en-pricing-fixed-admin-support
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-en-pricing-fixed-real-estate
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-en-pricing-terse-digital-marketing
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-en-technology
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-hi-deva-cap-atom-admin-dashboards
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-hi-deva-cap-atom-financial-consultation
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-hi-deva-capability-loan-assistance
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-hi-deva-pricing-digital-marketing
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-hi-latn-cap-atom-ai-voice-agents
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-hi-latn-cap-atom-business-consultation
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-hi-latn-cap-atom-customer-support-automation
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-hi-latn-cap-atom-mortgage-guidance
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-hi-latn-cap-atom-real-estate-management-platforms
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-hi-latn-guarantee
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-hi-latn-how-long-loan-assistance
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-hi-latn-out-of-scope
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-hi-latn-pricing-loan-assistance
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-hi-latn-what-is-admin-support
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-te-latn-cap-atom-ai-voice-agents
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-te-latn-cap-atom-business-consultation
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-te-latn-cap-atom-customer-support-automation
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-te-latn-cap-atom-mortgage-guidance
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-te-latn-cap-atom-real-estate-management-platforms
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-te-latn-guarantee
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-te-latn-how-long-loan-assistance
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-te-latn-out-of-scope
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-te-latn-pricing-loan-assistance
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-te-latn-what-is-admin-support
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-te-telu-cap-atom-admin-dashboards
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-te-telu-cap-atom-digital-brochures
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-te-telu-cap-atom-youtube-content
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-te-telu-industries
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null
+- query_id: q-te-telu-pricing-technology-solutions
+  decision: approved
+  reviewed_by: Rise Next team
+  reviewed_on: '2026-08-11'
+  notes: null

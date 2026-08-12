@@ -1,0 +1,166 @@
+# =============================================================================
+# RiseNext source material — TEMPLATE
+#
+#   cp TEMPLATE.yaml risenext.yaml     then fill it in
+#
+# Every entry below is an ANNOTATED EXAMPLE showing the shape of a field. The
+# example values are placeholders and are recognisable as such: they are the
+# string FILL_ME or an obviously-fake value. The loader refuses a file that still
+# contains FILL_ME, so a half-filled template cannot quietly become the corpus.
+#
+# TWO RULES THAT MATTER MORE THAN THE REST
+#
+#   1. `source_reference` is where the fact came from. An entry claiming
+#      tier source_grounded with no source_reference is REJECTED.
+#
+#   2. `authority: authoritative` + `never_rag: true` for anything with a
+#      current, changeable, exact value. CURRENT PRICING IS ALWAYS BOTH.
+#      A stale price in a knowledge base retrieves confidently and gets quoted
+#      to a caller as a commitment the business never made (PRD 6.5).
+#
+# See README.md in this directory for the reasoning.
+# =============================================================================
+
+source_material_version: 1
+
+# Who supplied this file and when. Not bookkeeping: when a benchmark result is
+# disputed, this is who gets asked.
+provenance:
+  supplied_by: FILL_ME # name or team
+  supplied_on: FILL_ME # YYYY-MM-DD
+  notes: FILL_ME # anything a future reader needs, or "none"
+
+# -----------------------------------------------------------------------------
+# COMPANY
+#
+# Descriptive background. Answers "who are you?" and "what do you do?".
+# -----------------------------------------------------------------------------
+company:
+  name: FILL_ME
+  # Two or three sentences, in the register the business actually uses about
+  # itself. This becomes a retrievable passage, so write prose rather than
+  # bullet points.
+  description: FILL_ME
+  # Optional. Each becomes its own passage, so keep each one to one topic.
+  additional:
+    - id: about-team
+      title: The team
+      text: FILL_ME
+      authority: descriptive
+      never_rag: false
+      source_reference: FILL_ME
+      review_status: pending # pending | reviewed
+    - id: about-locations
+      title: Offices and coverage
+      text: FILL_ME
+      authority: descriptive
+      never_rag: false
+      source_reference: FILL_ME
+      review_status: pending
+
+# -----------------------------------------------------------------------------
+# SERVICES
+#
+# One entry per thing you sell. `id` is a stable slug — it ends up in generated
+# passage and query ids, so choose it once and do not rename it.
+#
+# `near_duplicate_of` is how adversarial distractors get generated: naming two
+# services as easily-confused produces hard negatives that measure whether a
+# candidate can tell them apart. Leave it out if nothing is confusable.
+# -----------------------------------------------------------------------------
+services:
+  - id: FILL_ME # e.g. web-development
+    name: FILL_ME # e.g. Website design and development
+    # The retrievable description. Prose, two to six sentences.
+    description: FILL_ME
+    # What is included. Each becomes a retrievable capability line, and each is
+    # also usable as a "correct company, wrong capability" negative for OTHER
+    # services.
+    capabilities:
+      - FILL_ME
+    # Optional, only where a caller would plausibly ask.
+    technologies:
+      - FILL_ME
+    # Questions real callers ask about this service. These seed query intents;
+    # the phrasebook supplies the per-language phrasings.
+    common_questions:
+      - FILL_ME
+    # Optional: a service this is easily confused with, by its id.
+    near_duplicate_of: null
+    authority: descriptive
+    never_rag: false
+    source_reference: FILL_ME
+    review_status: pending
+
+# -----------------------------------------------------------------------------
+# FAQs
+#
+# Question-and-answer pairs. The answer becomes a passage; the question seeds a
+# query intent, so write the question the way a caller says it, not the way a
+# website headline phrases it.
+# -----------------------------------------------------------------------------
+faqs:
+  - id: FILL_ME # e.g. faq-support-hours
+    question: FILL_ME
+    answer: FILL_ME
+    authority: descriptive # `authoritative` if the answer has a current exact value
+    never_rag: false
+    source_reference: FILL_ME
+    review_status: pending
+
+# -----------------------------------------------------------------------------
+# POLICIES AND CONSTRAINTS
+#
+# Optional. Support windows, turnaround commitments, what you do not do.
+# NOTE: a support window is a fact that CHANGES. If it is exact and current
+# enough that quoting a stale value would be a problem, mark it authoritative.
+# -----------------------------------------------------------------------------
+policies:
+  - id: FILL_ME
+    title: FILL_ME
+    text: FILL_ME
+    authority: descriptive
+    never_rag: false
+    source_reference: FILL_ME
+    review_status: pending
+
+# -----------------------------------------------------------------------------
+# AUTHORITATIVE VALUES — INCLUDING PRICING
+#
+# Everything here is `never_rag: true` and the loader ENFORCES that. It is used
+# for exactly one purpose: generating price-bearing ADVERSARIAL passages, whose
+# job is to prove the benchmark notices when retrieval surfaces a price.
+#
+# These are never gold for any query. Pricing authority is get_service_pricing
+# reading service_prices, and nothing else.
+#
+# You may leave this section empty. It is here so that if you DO supply pricing,
+# it lands somewhere that cannot be mistaken for knowledge-base content.
+# -----------------------------------------------------------------------------
+authoritative_values:
+  - id: FILL_ME # e.g. price-web-development
+    # Which service this value belongs to, by id.
+    service_id: FILL_ME
+    kind: price # price | availability | identifier | status
+    # Written as a caller would hear it. It becomes an adversarial passage.
+    text: FILL_ME
+    authority: authoritative
+    never_rag: true
+    source_reference: FILL_ME
+    review_status: pending
+
+# -----------------------------------------------------------------------------
+# STALE / SUPERSEDED MATERIAL
+#
+# Optional but valuable. Old service descriptions, withdrawn offers, previous
+# process documents. They generate `stale`-role passages, which is how the
+# benchmark measures the failure `documents.status = 'active'` exists to prevent:
+# a mid-reindex document leaking half-old context.
+# -----------------------------------------------------------------------------
+superseded:
+  - id: FILL_ME
+    # The current entry this was replaced by, by id.
+    supersedes_current: FILL_ME
+    text: FILL_ME
+    source_reference: FILL_ME
+    review_status: pending

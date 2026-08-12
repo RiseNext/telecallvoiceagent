@@ -1,0 +1,961 @@
+# =============================================================================
+# Rise Next Solutions Pvt. Ltd. — OFFICIAL SOURCE MATERIAL
+#
+# Supplied by the Rise Next team on 2026-07-30 and treated as the current
+# authoritative business source for the demo/company knowledge.
+#
+# EVERY ENTRY HERE IS SOURCE-GROUNDED. Nothing in this file was invented.
+# Where the supplied material is silent, this file is silent: there are no
+# timelines, no team sizes, no office locations, no support hours and NO NUMERIC
+# PRICES, because none were supplied.
+#
+# -----------------------------------------------------------------------------
+# THE TWO CLASSIFICATIONS THAT MATTER
+#
+# `authority` is not bookkeeping. It decides whether retrieval may serve a fact.
+#
+#   descriptive    what we do. Retrieval may return it.
+#   policy         a business rule whose STATEMENT is the correct answer -
+#                  pricing policy, never-promise list, lender disclaimer.
+#                  Retrieval may return it, and MUST, or a pricing question has
+#                  no correct passage and the model is left to invent one.
+#   authoritative  a current exact VALUE - a price figure, a slot, an id.
+#                  Never RAG. THIS SECTION IS EMPTY: no prices were supplied.
+#   structural     CRM field definitions. Schema, not content. Never RAG, and
+#                  never even a passage.
+#
+# The pricing distinction, stated once: "quotations are customised" is a POLICY
+# and belongs in the knowledge base. "Rs 49,999" would be an AUTHORITATIVE VALUE
+# and must never be. The supplied material contains the first and none of the
+# second, which is why `authoritative_values` below is empty and stays empty
+# until real structured pricing data exists.
+# =============================================================================
+
+source_material_version: 1
+
+provenance:
+  supplied_by: Rise Next team
+  supplied_on: 2026-07-30
+  notes: >-
+    Official business source material supplied verbatim by the Rise Next team.
+    Structured into categories without adding, inferring or extrapolating any
+    fact. Anything the supplied material does not state is absent here rather
+    than filled in. No numeric pricing was supplied and none has been invented.
+
+# -----------------------------------------------------------------------------
+# 1. COMPANY PROFILE
+# -----------------------------------------------------------------------------
+company:
+  name: Rise Next Solutions Pvt. Ltd.
+  description: >-
+    Rise Next Solutions Pvt. Ltd. is a business growth company that helps
+    entrepreneurs and businesses build, manage, and scale their operations under
+    one roof. Instead of offering just one service, Rise Next provides an
+    integrated ecosystem covering technology, branding, marketing,
+    administration, creative production, financing assistance and business
+    support. The goal is to become a long-term business partner by helping
+    companies simplify operations, improve efficiency, increase brand visibility
+    and accelerate growth.
+
+  # ---------------------------------------------------------------------------
+  # DECOMPOSITION, NOT ELABORATION.
+  #
+  # The company description above is one paragraph making three distinct claims.
+  # Each is split out below so a caller's question reaches the sentence that
+  # answers it rather than the whole paragraph. The wording is the supplied
+  # wording; nothing is added, and no claim appears here that is not already in
+  # the paragraph above.
+  # ---------------------------------------------------------------------------
+  additional:
+    - id: company-identity
+      title: What Rise Next is
+      text: >-
+        Rise Next Solutions Pvt. Ltd. is a business growth company that helps
+        entrepreneurs and businesses build, manage, and scale their operations
+        under one roof.
+      authority: descriptive
+      never_rag: false
+      source_reference: "Rise Next source material 2026-07-30, section: COMPANY PROFILE"
+      review_status: reviewed
+      reviewed_by: Rise Next team
+      reviewed_on: 2026-07-30
+
+    - id: company-ecosystem
+      title: An integrated ecosystem, not a single service
+      text: >-
+        Instead of offering just one service, Rise Next provides an integrated
+        ecosystem covering technology, branding, marketing, administration,
+        creative production, financing assistance and business support.
+      authority: descriptive
+      never_rag: false
+      source_reference: "Rise Next source material 2026-07-30, section: COMPANY PROFILE"
+      review_status: reviewed
+      reviewed_by: Rise Next team
+      reviewed_on: 2026-07-30
+
+    - id: company-goal
+      title: What Rise Next aims to do for a business
+      text: >-
+        The goal is to become a long-term business partner by helping companies
+        simplify operations, improve efficiency, increase brand visibility and
+        accelerate growth.
+      authority: descriptive
+      never_rag: false
+      source_reference: "Rise Next source material 2026-07-30, section: COMPANY PROFILE"
+      review_status: reviewed
+      reviewed_by: Rise Next team
+      reviewed_on: 2026-07-30
+
+    - id: company-mission
+      title: Our mission
+      text: >-
+        To provide businesses with everything they need to grow - from strategy
+        and technology to operations and marketing - through one trusted partner.
+      authority: descriptive
+      never_rag: false
+      source_reference: "Rise Next source material 2026-07-30, section: MISSION"
+      review_status: reviewed
+      reviewed_by: Rise Next team
+      reviewed_on: 2026-07-30
+
+# -----------------------------------------------------------------------------
+# 2. INDUSTRIES
+# -----------------------------------------------------------------------------
+industries:
+  - id: industries-served
+    title: Industries we serve
+    text: >-
+      Rise Next serves Real Estate, Banking and Financial Services, Retail,
+      Healthcare, Education, Manufacturing, Construction, Hospitality, Logistics,
+      Startups, SMEs and Professional Services.
+    authority: descriptive
+    never_rag: false
+    source_reference: "Rise Next source material 2026-07-30, section: INDUSTRIES SERVED"
+    review_status: reviewed
+    reviewed_by: Rise Next team
+    reviewed_on: 2026-07-30
+
+# -----------------------------------------------------------------------------
+# 3. SERVICE CATALOG
+#
+# Seven service groups, exactly as supplied. `capabilities` are the listed
+# sub-services, verbatim.
+#
+# `near_duplicate_of` is BENCHMARK CONFIGURATION, not a business claim: it marks
+# pairs a retrieval system is likely to confuse, and each one below is justified
+# by overlap visible in the supplied text itself (real estate lists websites and
+# CRM; AI automation and technology both build software; branding and marketing
+# both produce content). It is not an assertion that the services are the same.
+# -----------------------------------------------------------------------------
+services:
+  - id: technology-solutions
+    name: Technology Solutions
+    description: >-
+      Rise Next develops custom technology solutions that help businesses
+      automate operations and improve customer experiences.
+    capabilities:
+      - Business Websites
+      - Corporate Websites
+      - E-Commerce Platforms
+      - Custom Web Applications
+      - Mobile Applications (Android & iOS)
+      - CRM Development
+      - ERP Solutions
+      - HR Management Systems
+      - Real Estate Management Platforms
+      - Customer Portals
+      - Admin Dashboards
+      - API Integrations
+      - Cloud Deployment
+      - Software Maintenance
+    technologies: []
+    common_questions:
+      - Do you create mobile applications?
+      - Do you only build websites?
+    authority: descriptive
+    never_rag: false
+    source_reference: "Rise Next source material 2026-07-30, section: SERVICES A"
+    review_status: reviewed
+    reviewed_by: Rise Next team
+    reviewed_on: 2026-07-30
+
+  - id: ai-automation
+    name: AI & Business Automation
+    description: >-
+      Rise Next helps businesses automate customer interactions and internal
+      workflows using Artificial Intelligence.
+    capabilities:
+      - AI Voice Agents
+      - AI Chatbots
+      - WhatsApp Automation
+      - Customer Support Automation
+      - Appointment Booking Systems
+      - AI Knowledge Bases
+      - AI Workflow Automation
+      - Lead Qualification Automation
+      - CRM Automation
+    technologies: []
+    common_questions:
+      - Can you automate customer support?
+    near_duplicate_of: technology-solutions
+    authority: descriptive
+    never_rag: false
+    source_reference: "Rise Next source material 2026-07-30, section: SERVICES B"
+    review_status: reviewed
+    reviewed_by: Rise Next team
+    reviewed_on: 2026-07-30
+
+  - id: digital-marketing
+    name: Digital Marketing
+    description: >-
+      Rise Next helps businesses generate visibility, leads, and measurable
+      growth through digital channels.
+    capabilities:
+      - Search Engine Optimization (SEO)
+      - Google Ads
+      - Meta Ads
+      - Social Media Marketing
+      - Content Marketing
+      - Performance Marketing
+      - Lead Generation Campaigns
+      - Analytics & Reporting
+    technologies: []
+    common_questions:
+      - Do you provide digital marketing?
+    authority: descriptive
+    never_rag: false
+    source_reference: "Rise Next source material 2026-07-30, section: SERVICES C"
+    review_status: reviewed
+    reviewed_by: Rise Next team
+    reviewed_on: 2026-07-30
+
+  - id: branding-creative
+    name: Branding & Creative Services
+    description: >-
+      Rise Next Studio is an in-house creative production unit. It specifically
+      provides podcasts, reels, advertisement editing, shoots, branding, logos
+      and thumbnails.
+    capabilities:
+      - Brand Identity
+      - Logo Design
+      - Graphic Design
+      - Company Profiles
+      - Product Catalogues
+      - Podcast Production
+      - Professional Photography
+      - Corporate Shoots
+      - Advertisement Videos
+      - Reels Creation
+      - YouTube Content
+      - Thumbnail Design
+      - Video Editing
+      - Motion Graphics
+    technologies: []
+    common_questions:
+      - Do you offer branding services?
+    near_duplicate_of: digital-marketing
+    authority: descriptive
+    never_rag: false
+    source_reference: "Rise Next source material 2026-07-30, section: SERVICES D"
+    review_status: reviewed
+    reviewed_by: Rise Next team
+    reviewed_on: 2026-07-30
+
+  - id: admin-support
+    name: Administration & Business Support
+    description: >-
+      Rise Next supports businesses beyond technology through operational and
+      administrative assistance, emphasising administration, back-office
+      operations, compliance and process support.
+    capabilities:
+      - Business Operations Support
+      - Documentation
+      - Compliance Assistance
+      - Process Optimization
+      - Administrative Support
+      - Customer Support Operations
+      - Business Consultation
+    technologies: []
+    common_questions: []
+    authority: descriptive
+    never_rag: false
+    source_reference: "Rise Next source material 2026-07-30, section: SERVICES E"
+    review_status: reviewed
+    reviewed_by: Rise Next team
+    reviewed_on: 2026-07-30
+
+  - id: loan-assistance
+    name: Loan & Financing Assistance
+    description: >-
+      Rise Next assists businesses and individuals with financing processes.
+      Rise Next does not lend money; it assists customers with documentation,
+      application processes, and coordination with banks and financial
+      institutions.
+    capabilities:
+      - Business Loan Assistance
+      - Home Loan Assistance
+      - Mortgage Guidance
+      - Documentation Support
+      - Application Processing Support
+      - Bank Follow-up
+      - Financial Consultation
+    technologies: []
+    common_questions:
+      - Can you help with business loans?
+    authority: descriptive
+    never_rag: false
+    source_reference: "Rise Next source material 2026-07-30, section: SERVICES F"
+    review_status: reviewed
+    reviewed_by: Rise Next team
+    reviewed_on: 2026-07-30
+
+  - id: real-estate
+    name: Real Estate Solutions
+    description: >-
+      Real estate is a specialized business domain for Rise Next, with dedicated
+      platforms and marketing solutions.
+    capabilities:
+      - Real Estate Websites
+      - Interactive Layout Viewers
+      - Plot Management Systems
+      - Online Booking Platforms
+      - Customer Lead Management
+      - AI Sales Assistants
+      - Digital Brochures
+      - Project Marketing
+      - Property CRM
+      - Virtual Project Showcase
+    technologies: []
+    common_questions: []
+    near_duplicate_of: technology-solutions
+    authority: descriptive
+    never_rag: false
+    source_reference: "Rise Next source material 2026-07-30, section: SERVICES G"
+    review_status: reviewed
+    reviewed_by: Rise Next team
+    reviewed_on: 2026-07-30
+
+# -----------------------------------------------------------------------------
+# 4. TECHNOLOGY CAPABILITIES
+#
+# Listed for the company as a whole in the supplied material, NOT per service.
+# They are therefore company-level passages; attributing them to individual
+# services would be an inference the source does not support.
+# -----------------------------------------------------------------------------
+technology_capabilities:
+  - id: tech-software
+    title: Software technologies
+    text: >-
+      Rise Next builds software using React, Next.js, Node.js, Express.js,
+      Flutter, React Native, Python, PHP and Java.
+    authority: descriptive
+    never_rag: false
+    source_reference: "Rise Next source material 2026-07-30, section: TECHNOLOGIES - SOFTWARE"
+    review_status: reviewed
+    reviewed_by: Rise Next team
+    reviewed_on: 2026-07-30
+
+  - id: tech-database
+    title: Database technologies
+    text: >-
+      Rise Next works with MongoDB, PostgreSQL, MySQL and Firebase.
+    authority: descriptive
+    never_rag: false
+    source_reference: "Rise Next source material 2026-07-30, section: TECHNOLOGIES - DATABASE"
+    review_status: reviewed
+    reviewed_by: Rise Next team
+    reviewed_on: 2026-07-30
+
+  - id: tech-ai
+    title: AI capabilities
+    text: >-
+      Rise Next works with AI Voice Agents, OpenAI Integrations, Chatbots, AI
+      Automation, Retrieval AI and Business Automation.
+    authority: descriptive
+    never_rag: false
+    source_reference: "Rise Next source material 2026-07-30, section: TECHNOLOGIES - AI"
+    review_status: reviewed
+    reviewed_by: Rise Next team
+    reviewed_on: 2026-07-30
+
+  - id: tech-cloud
+    title: Cloud platforms
+    text: >-
+      Rise Next deploys on AWS, Azure, Google Cloud, Vercel, Railway and
+      Cloudinary.
+    authority: descriptive
+    never_rag: false
+    source_reference: "Rise Next source material 2026-07-30, section: TECHNOLOGIES - CLOUD"
+    review_status: reviewed
+    reviewed_by: Rise Next team
+    reviewed_on: 2026-07-30
+
+  - id: tech-business-automation
+    title: Business automation integrations
+    text: >-
+      Rise Next integrates WhatsApp Business API, CRM Integration, ERP, Payment
+      Gateway Integration, Email Automation and SMS Automation.
+    authority: descriptive
+    never_rag: false
+    source_reference: >-
+      Rise Next source material 2026-07-30, section: TECHNOLOGIES - BUSINESS AUTOMATION
+    review_status: reviewed
+    reviewed_by: Rise Next team
+    reviewed_on: 2026-07-30
+
+  - id: tech-creative
+    title: Creative production capabilities
+    text: >-
+      Rise Next provides Professional Video Production, Photography, Podcast
+      Production, Graphic Design and Branding.
+    authority: descriptive
+    never_rag: false
+    source_reference: "Rise Next source material 2026-07-30, section: TECHNOLOGIES - CREATIVE"
+    review_status: reviewed
+    reviewed_by: Rise Next team
+    reviewed_on: 2026-07-30
+
+# -----------------------------------------------------------------------------
+# 5. BUSINESS PROCESS
+# -----------------------------------------------------------------------------
+# The eleven stages are supplied as one ordered list. The overview keeps that
+# list intact; the three groupings below slice it so a question about one part
+# of an engagement ("what happens before I sign?") reaches the relevant stages
+# rather than all eleven.
+#
+# THE GROUPING IS PRESENTATION, NOT A BUSINESS CLAIM. The source states the
+# stages and their order; it does not name phases. No stage has been added,
+# renamed, reordered or given a duration - the never-promise list explicitly
+# forbids committing to delivery dates before scope is finalised, and there are
+# no timings in the supplied material to quote.
+business_process:
+  - id: business-process
+    title: How a Rise Next project runs
+    text: >-
+      A Rise Next engagement runs through eleven stages: Requirement Discussion,
+      Business Understanding, Solution Consultation, Proposal & Quotation,
+      Project Approval, Design & Planning, Development / Execution, Testing &
+      Review, Deployment / Launch, Training (if required), and Ongoing Support &
+      Growth.
+    authority: descriptive
+    never_rag: false
+    source_reference: "Rise Next source material 2026-07-30, section: BUSINESS PROCESS"
+    review_status: reviewed
+    reviewed_by: Rise Next team
+    reviewed_on: 2026-07-30
+
+  - id: business-process-engagement
+    title: Before a project starts
+    text: >-
+      The opening stages of a Rise Next engagement are Requirement Discussion,
+      Business Understanding, Solution Consultation, Proposal & Quotation and
+      Project Approval.
+    authority: descriptive
+    never_rag: false
+    source_reference: "Rise Next source material 2026-07-30, section: BUSINESS PROCESS"
+    review_status: reviewed
+    reviewed_by: Rise Next team
+    reviewed_on: 2026-07-30
+
+  - id: business-process-delivery
+    title: While the work is being built
+    text: >-
+      Once a project is approved, a Rise Next engagement moves through Design &
+      Planning, Development / Execution and Testing & Review.
+    authority: descriptive
+    never_rag: false
+    source_reference: "Rise Next source material 2026-07-30, section: BUSINESS PROCESS"
+    review_status: reviewed
+    reviewed_by: Rise Next team
+    reviewed_on: 2026-07-30
+
+  - id: business-process-launch
+    title: Launch and afterwards
+    text: >-
+      A Rise Next engagement closes with Deployment / Launch, Training (if
+      required), and Ongoing Support & Growth.
+    authority: descriptive
+    never_rag: false
+    source_reference: "Rise Next source material 2026-07-30, section: BUSINESS PROCESS"
+    review_status: reviewed
+    reviewed_by: Rise Next team
+    reviewed_on: 2026-07-30
+
+# -----------------------------------------------------------------------------
+# 6. FAQ KNOWLEDGE
+#
+# Question-and-answer pairs, verbatim.
+# -----------------------------------------------------------------------------
+faqs:
+  - id: faq-only-websites
+    question: Do you only build websites?
+    answer: >-
+      No. Websites are just one part of what we do. Rise Next provides complete
+      business solutions including software development, AI automation, branding,
+      digital marketing, administrative support, creative production, loan
+      assistance, and business growth services.
+    authority: descriptive
+    never_rag: false
+    source_reference: "Rise Next source material 2026-07-30, section: FAQS"
+    review_status: reviewed
+    reviewed_by: Rise Next team
+    reviewed_on: 2026-07-30
+
+  - id: faq-grow-business
+    question: Can you help grow my business?
+    answer: >-
+      Yes. Our focus is to support businesses through technology, branding,
+      marketing, operations, and automation so they can grow efficiently.
+    authority: descriptive
+    never_rag: false
+    source_reference: "Rise Next source material 2026-07-30, section: FAQS"
+    review_status: reviewed
+    reviewed_by: Rise Next team
+    reviewed_on: 2026-07-30
+
+  - id: faq-mobile-apps
+    question: Do you create mobile applications?
+    answer: >-
+      Yes. We develop Android, iOS, and cross-platform mobile applications.
+    # `service_id` on an FAQ is BENCHMARK CONFIGURATION, not a business claim.
+    #
+    # It says "this FAQ partially answers a question about that service", which
+    # makes the FAQ reachable as grade-1 gold instead of sitting in the corpus
+    # unreachable. Set only where the supplied FAQ text names the service
+    # unmistakably - here, TECHNOLOGY SOLUTIONS lists "Mobile App Development"
+    # in the source material itself. Nothing is inferred about the business.
+    service_id: technology-solutions
+    authority: descriptive
+    never_rag: false
+    source_reference: "Rise Next source material 2026-07-30, section: FAQS"
+    review_status: reviewed
+    reviewed_by: Rise Next team
+    reviewed_on: 2026-07-30
+
+  - id: faq-automate-support
+    question: Can you automate customer support?
+    answer: >-
+      Yes. We develop AI voice agents, AI chatbots, WhatsApp automation, and
+      customer service workflows.
+    service_id: ai-automation
+    authority: descriptive
+    never_rag: false
+    source_reference: "Rise Next source material 2026-07-30, section: FAQS"
+    review_status: reviewed
+    reviewed_by: Rise Next team
+    reviewed_on: 2026-07-30
+
+  - id: faq-branding
+    question: Do you offer branding services?
+    answer: >-
+      Yes. Through Rise Next Studio, we provide branding, logos, professional
+      shoots, reels, podcasts, video production, and advertising creatives.
+    service_id: branding-creative
+    authority: descriptive
+    never_rag: false
+    source_reference: "Rise Next source material 2026-07-30, section: FAQS"
+    review_status: reviewed
+    reviewed_by: Rise Next team
+    reviewed_on: 2026-07-30
+
+  - id: faq-digital-marketing
+    question: Do you provide digital marketing?
+    answer: >-
+      Yes. We offer SEO, paid advertising, social media marketing, content
+      creation, and performance marketing.
+    service_id: digital-marketing
+    authority: descriptive
+    never_rag: false
+    source_reference: "Rise Next source material 2026-07-30, section: FAQS"
+    review_status: reviewed
+    reviewed_by: Rise Next team
+    reviewed_on: 2026-07-30
+
+  - id: faq-business-loans
+    question: Can you help with business loans?
+    answer: >-
+      Yes. We assist customers with documentation, application guidance, and
+      coordination with financial institutions. We are not a lender.
+    service_id: loan-assistance
+    # `kind: lending` makes this grade-1 gold for a lending question alongside the
+    # grade-2 disclaimer. The FAQ carries the constraint in the customer's own
+    # words - "We are not a lender" - which is the phrasing a caller's question is
+    # closest to, so a candidate that finds this and not the disclaimer has still
+    # found the constraint. Grading it 1 rather than 2 records that it is the
+    # weaker source: the disclaimer is the authoritative statement.
+    kind: lending
+    authority: descriptive
+    never_rag: false
+    source_reference: "Rise Next source material 2026-07-30, section: FAQS"
+    review_status: reviewed
+    reviewed_by: Rise Next team
+    reviewed_on: 2026-07-30
+
+# -----------------------------------------------------------------------------
+# 7. POLICIES & LIMITATIONS
+#
+# `authority: policy` - guardrail knowledge whose STATEMENT is the correct
+# answer. RAG-eligible, deliberately: a "can you guarantee X?" question needs a
+# retrievable constraint, or the model has nothing to refuse from.
+# -----------------------------------------------------------------------------
+policies:
+  - id: policy-never-promise
+    title: What Rise Next never promises
+    text: >-
+      Rise Next never promises guaranteed loan approvals, guaranteed Google
+      rankings, guaranteed sales or revenue, exact pricing without understanding
+      the project, fixed delivery dates before scope is finalized, unlimited
+      revisions, lifetime free maintenance, features outside the agreed scope, or
+      legal or financial advice beyond general guidance.
+    authority: policy
+    # `kind` is what the gold map keys on. It is schema, not prose: the builder
+    # resolves "which passage answers a guarantees question" through
+    # (section, kind), so renaming this id would not break the corpus but
+    # removing this line would - silently, by producing goldless queries that
+    # look exactly like retrieval failures.
+    kind: never_promise
+    never_rag: false
+    source_reference: "Rise Next source material 2026-07-30, section: POLICIES & LIMITATIONS"
+    review_status: reviewed
+    reviewed_by: Rise Next team
+    reviewed_on: 2026-07-30
+
+  # The nine never-promises, split out one per entry.
+  #
+  # `kind: never_promise_item` rather than `never_promise`, so the gold map can
+  # grade the full list above at 2 and each item at 1: a candidate that finds the
+  # specific clause has found the constraint, and one that finds the whole list
+  # has found it more completely.
+  #
+  # Every line below is the supplied wording. Nothing was added, softened or
+  # generalised - this is the list the agent refuses from, and a paraphrase here
+  # would be a different promise.
+  - id: policy-never-loan-approval
+    title: Rise Next never promises guaranteed loan approvals
+    text: >-
+      Rise Next never promises guaranteed loan approvals. Rise Next assists with
+      documentation, application processes and coordination with banks and
+      financial institutions, and is not a lender.
+    authority: policy
+    kind: never_promise_item
+    topic: loan_approval
+    never_rag: false
+    source_reference: "Rise Next source material 2026-07-30, section: POLICIES & LIMITATIONS"
+    review_status: reviewed
+    reviewed_by: Rise Next team
+    reviewed_on: 2026-07-30
+
+  - id: policy-never-google-ranking
+    title: Rise Next never promises guaranteed Google rankings
+    text: >-
+      Rise Next never promises guaranteed Google rankings. Search engine
+      optimization is one of the digital marketing services Rise Next offers, but
+      a ranking position is not something Rise Next commits to.
+    authority: policy
+    kind: never_promise_item
+    topic: google_ranking
+    never_rag: false
+    source_reference: "Rise Next source material 2026-07-30, section: POLICIES & LIMITATIONS"
+    review_status: reviewed
+    reviewed_by: Rise Next team
+    reviewed_on: 2026-07-30
+
+  - id: policy-never-sales-revenue
+    title: Rise Next never promises guaranteed sales or revenue
+    text: >-
+      Rise Next never promises guaranteed sales or revenue. Rise Next supports
+      businesses through technology, branding, marketing, operations and
+      automation so they can grow efficiently, without committing to a figure.
+    authority: policy
+    kind: never_promise_item
+    topic: sales_revenue
+    never_rag: false
+    source_reference: "Rise Next source material 2026-07-30, section: POLICIES & LIMITATIONS"
+    review_status: reviewed
+    reviewed_by: Rise Next team
+    reviewed_on: 2026-07-30
+
+  - id: policy-never-exact-pricing
+    title: Rise Next never promises exact pricing without understanding the project
+    text: >-
+      Rise Next never promises exact pricing without understanding the project.
+      Rise Next prepares customized quotations once it understands your goals,
+      required features, integrations, timeline and project scope.
+    authority: policy
+    kind: never_promise_item
+    topic: exact_pricing
+    never_rag: false
+    source_reference: "Rise Next source material 2026-07-30, section: POLICIES & LIMITATIONS"
+    review_status: reviewed
+    reviewed_by: Rise Next team
+    reviewed_on: 2026-07-30
+
+  - id: policy-never-fixed-dates
+    title: Rise Next never promises fixed delivery dates before scope is finalized
+    text: >-
+      Rise Next never promises fixed delivery dates before scope is finalized. A
+      timeline is one of the things a customized quotation is based on, so it
+      follows the scope rather than preceding it.
+    authority: policy
+    kind: never_promise_item
+    topic: fixed_dates
+    never_rag: false
+    source_reference: "Rise Next source material 2026-07-30, section: POLICIES & LIMITATIONS"
+    review_status: reviewed
+    reviewed_by: Rise Next team
+    reviewed_on: 2026-07-30
+
+  - id: policy-never-unlimited-revisions
+    title: Rise Next never promises unlimited revisions
+    text: >-
+      Rise Next never promises unlimited revisions.
+    authority: policy
+    kind: never_promise_item
+    topic: unlimited_revisions
+    never_rag: false
+    source_reference: "Rise Next source material 2026-07-30, section: POLICIES & LIMITATIONS"
+    review_status: reviewed
+    reviewed_by: Rise Next team
+    reviewed_on: 2026-07-30
+
+  - id: policy-never-lifetime-maintenance
+    title: Rise Next never promises lifetime free maintenance
+    text: >-
+      Rise Next never promises lifetime free maintenance. Software Maintenance is
+      one of the technology services Rise Next offers, and Ongoing Support &
+      Growth is the closing stage of an engagement.
+    authority: policy
+    kind: never_promise_item
+    topic: lifetime_maintenance
+    never_rag: false
+    source_reference: "Rise Next source material 2026-07-30, section: POLICIES & LIMITATIONS"
+    review_status: reviewed
+    reviewed_by: Rise Next team
+    reviewed_on: 2026-07-30
+
+  - id: policy-never-out-of-scope-features
+    title: Rise Next never promises features outside the agreed scope
+    text: >-
+      Rise Next never promises features outside the agreed scope. Project scope is
+      one of the things a customized quotation is based on.
+    authority: policy
+    kind: never_promise_item
+    topic: out_of_scope_features
+    never_rag: false
+    source_reference: "Rise Next source material 2026-07-30, section: POLICIES & LIMITATIONS"
+    review_status: reviewed
+    reviewed_by: Rise Next team
+    reviewed_on: 2026-07-30
+
+  - id: policy-never-legal-financial-advice
+    title: Rise Next never promises legal or financial advice beyond general guidance
+    text: >-
+      Rise Next never promises legal or financial advice beyond general guidance.
+      Financial Consultation and Business Consultation are offered as services,
+      and they do not extend to advice beyond general guidance.
+    authority: policy
+    kind: never_promise_item
+    topic: legal_financial_advice
+    never_rag: false
+    source_reference: "Rise Next source material 2026-07-30, section: POLICIES & LIMITATIONS"
+    review_status: reviewed
+    reviewed_by: Rise Next team
+    reviewed_on: 2026-07-30
+
+  - id: policy-uncertainty
+    title: When Rise Next is uncertain
+    text: >-
+      If uncertain, the correct response is: "I'll have one of our specialists
+      review your requirements and get back to you with the most suitable
+      solution."
+    authority: policy
+    kind: uncertainty
+    never_rag: false
+    source_reference: "Rise Next source material 2026-07-30, section: POLICIES & LIMITATIONS"
+    review_status: reviewed
+    reviewed_by: Rise Next team
+    reviewed_on: 2026-07-30
+
+# -----------------------------------------------------------------------------
+# 8. FINANCING / LOAN DISCLAIMER
+#
+# The highest-priority business constraint in the supplied material, kept in its
+# own section so it cannot be lost among the service descriptions.
+# -----------------------------------------------------------------------------
+financing_disclaimer:
+  - id: policy-not-a-lender
+    title: Rise Next is not a lender
+    text: >-
+      Rise Next does not lend money. Rise Next only assists customers with
+      documentation, application processes, and coordination with banks and
+      financial institutions. Rise Next must never be represented as a lender and
+      must never promise loan approval.
+    authority: policy
+    never_rag: false
+    source_reference: >-
+      Rise Next source material 2026-07-30, section: SERVICES F - CRITICAL BUSINESS CONSTRAINT
+    review_status: reviewed
+    reviewed_by: Rise Next team
+    reviewed_on: 2026-07-30
+
+  # The disclaimer makes three separable claims, and a caller's question usually
+  # targets one of them: "do you lend?" / "what do you actually do then?" /
+  # "can you get my loan approved?". Split so each has a passage that answers it
+  # directly. Same wording, no addition.
+  - id: policy-does-not-lend
+    title: Rise Next does not lend money
+    text: >-
+      Rise Next does not lend money. Rise Next must never be represented as a
+      lender.
+    authority: policy
+    kind: not_a_lender
+    never_rag: false
+    source_reference: >-
+      Rise Next source material 2026-07-30, section: SERVICES F - CRITICAL BUSINESS CONSTRAINT
+    review_status: reviewed
+    reviewed_by: Rise Next team
+    reviewed_on: 2026-07-30
+
+  - id: policy-what-financing-help-is
+    title: What Rise Next does help with on financing
+    text: >-
+      Rise Next only assists customers with documentation, application processes,
+      and coordination with banks and financial institutions.
+    authority: policy
+    kind: financing_assistance
+    never_rag: false
+    source_reference: >-
+      Rise Next source material 2026-07-30, section: SERVICES F - CRITICAL BUSINESS CONSTRAINT
+    review_status: reviewed
+    reviewed_by: Rise Next team
+    reviewed_on: 2026-07-30
+
+# -----------------------------------------------------------------------------
+# 9. PRICING POLICY
+#
+# `authority: policy` and RAG-ELIGIBLE, and this is the deliberate choice worth
+# understanding.
+#
+# The instinct is to hide anything price-related from retrieval. That instinct is
+# backwards here. The danger is not that retrieval returns "quotations are
+# customised" - that IS the correct answer. The danger is that retrieval returns
+# a NUMBER. Withholding the policy would leave every pricing question with no
+# correct passage at all, which is exactly the situation in which a model
+# invents a figure.
+#
+# There are no numeric prices anywhere in this file. See `authoritative_values`.
+# -----------------------------------------------------------------------------
+pricing_policy:
+  - id: policy-pricing-customised
+    title: How Rise Next prices work
+    text: >-
+      Rise Next provides customized quotations. Every business has unique
+      requirements, so Rise Next prepares customized quotations based on your
+      goals, required features, integrations, timeline, and project scope. Once
+      Rise Next understands your needs, the team will provide a detailed proposal.
+    authority: policy
+    never_rag: false
+    source_reference: "Rise Next source material 2026-07-30, section: PRICING POLICY"
+    review_status: reviewed
+    reviewed_by: Rise Next team
+    reviewed_on: 2026-07-30
+
+  - id: policy-pricing-approximate
+    title: When a customer asks for an approximate budget
+    text: >-
+      Some standard services have indicative pricing, but most Rise Next projects
+      are custom-built. It is best to understand your requirements first so Rise
+      Next can recommend the right solution and provide an accurate estimate.
+    authority: policy
+    never_rag: false
+    source_reference: "Rise Next source material 2026-07-30, section: PRICING POLICY"
+    review_status: reviewed
+    reviewed_by: Rise Next team
+    reviewed_on: 2026-07-30
+
+  # The five things a quotation is based on, named in the supplied pricing
+  # policy. Split out because "what do you need from me before you can quote?"
+  # is a distinct question from "how does your pricing work?", and the answer is
+  # this list. STILL NO NUMBERS - there are none in the source and none here.
+  - id: policy-pricing-factors
+    title: What a Rise Next quotation is based on
+    text: >-
+      A Rise Next quotation is prepared from your goals, required features,
+      integrations, timeline, and project scope. Once Rise Next understands those,
+      the team provides a detailed proposal.
+    authority: policy
+    never_rag: false
+    source_reference: "Rise Next source material 2026-07-30, section: PRICING POLICY"
+    review_status: reviewed
+    reviewed_by: Rise Next team
+    reviewed_on: 2026-07-30
+
+# -----------------------------------------------------------------------------
+# 10. LEAD REQUIREMENTS
+#
+# `authority: structural` - CRM field definitions. Schema, not content. Recorded
+# here so the future `create_lead` / `save_customer_requirement` tools have an
+# authoritative field list, and excluded from the corpus entirely: a field list
+# is not something a caller asks about, so a passage of it would add noise
+# without adding a test.
+# -----------------------------------------------------------------------------
+lead_requirements:
+  - id: lead-fields
+    title: Lead information to collect
+    text: >-
+      Contact information: Full Name, Company Name, Mobile Number, Email Address.
+      Business information: Industry, Business Location, Existing Website (if
+      any). Requirement details: Service Required, Brief Description, Current
+      Challenges, Expected Features, Budget Range (optional), Preferred Timeline
+      (optional). Meeting preference: Preferred Date, Preferred Time, Phone Call,
+      WhatsApp, Google Meet, Office Visit.
+    authority: structural
+    never_rag: true
+    source_reference: "Rise Next source material 2026-07-30, section: LEAD INFORMATION"
+    review_status: reviewed
+    reviewed_by: Rise Next team
+    reviewed_on: 2026-07-30
+
+  - id: lead-closing-response
+    title: Closing response
+    text: >-
+      "Thank you for sharing your requirements. I've recorded your details, and
+      our team will review them and contact you shortly with the best possible
+      solution. We look forward to helping you build, manage, and scale your
+      business with Rise Next."
+    authority: structural
+    never_rag: true
+    source_reference: "Rise Next source material 2026-07-30, section: CLOSING RESPONSE"
+    review_status: reviewed
+    reviewed_by: Rise Next team
+    reviewed_on: 2026-07-30
+
+# -----------------------------------------------------------------------------
+# AUTHORITATIVE VALUES
+#
+# DELIBERATELY EMPTY.
+#
+# The supplied material contains NO numeric prices, and none have been invented.
+# Rise Next quotes customised pricing, so there is nothing here to record.
+#
+# The consequence is stronger than the usual guarantee. Normally the corpus can
+# only promise "price-bearing passages are marked as traps and are never gold".
+# With this section empty it promises something better: NO NUMERIC PRICE EXISTS
+# ANYWHERE IN THE CORPUS, enforced by the `no_numeric_prices_in_corpus` gate.
+#
+# When real structured pricing data exists it belongs in `service_prices` behind
+# `get_service_pricing` - not here, and never in a knowledge passage.
+# -----------------------------------------------------------------------------
+authoritative_values: []
+
+# -----------------------------------------------------------------------------
+# SUPERSEDED MATERIAL
+#
+# EMPTY - no superseded or withdrawn content was supplied.
+#
+# The cost is a real gap in the benchmark: without it there is no `stale` passage,
+# so the corpus cannot measure the failure that `documents.status = 'active'`
+# exists to prevent (a mid-reindex document leaking half-old context). Supplying
+# an old service description or a withdrawn offer would close it.
+# -----------------------------------------------------------------------------
+superseded: []
