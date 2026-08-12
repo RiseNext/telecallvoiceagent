@@ -356,7 +356,7 @@ Every external system sits behind an interface in `rn_providers`. Interfaces are
 | `RealtimeVoiceProvider` | OpenAI Realtime | the provider-swap seam that matters most |
 | `STTProvider` / `TTSProvider` | Sarvam | for the cascaded fallback path |
 | `LLMProvider` | OpenAI (+ Sarvam is OpenAI-compatible) | non-realtime reasoning |
-| `EmbeddingProvider` | OpenAI `text-embedding-3-small` | dimension is baked into the schema — see [DATA_MODEL.md](DATA_MODEL.md) |
+| `EmbeddingProvider` | **none chosen — open decision D-8** | The seam and a deterministic offline fake exist; an OpenAI adapter exists and is exercised against a mocked transport. **No model, width, column type, ANN index or partitioning strategy is approved.** The width becomes part of the Postgres column type, so it is chosen only after measurement — see [ADR-010](DECISIONS/ADR-010-defer-vector-storage-layout.md) and [research/D8_BAKEOFF.md](research/D8_BAKEOFF.md). Any document quoting a model or a dimension as settled is stale. |
 | `MessagingProvider` | Exotel WhatsApp | template rules are provider-specific |
 | `StorageProvider` | S3-compatible | uploads, exports, recordings |
 | `IdentityProvider` | Clerk | verification + org claim extraction |
@@ -379,7 +379,7 @@ Tenancy is a **security boundary**, not a filter.
 
 A subtle correctness trap that shapes retrieval: with approximate vector indexes, filters are applied *after* the index scan, so a naive `WHERE organization_id = ? ORDER BY embedding <=> ?` on a shared HNSW index silently returns too few rows. It does not error — the agent just appears to have forgotten its knowledge base. This is why every retrieval goes through one shared helper, whatever index sits underneath it.
 
-The *physical* vector layout — column type, dimension, index and partitioning — is **not decided yet**. It is open decision **D-8**, resolved in Phase 3 after a bake-off on real Indic data ([ADR-010](DECISIONS/ADR-010-defer-vector-storage-layout.md)). Tenant isolation does not depend on it: scoped repositories plus RLS are independent of physical layout, and partitioning was never the isolation mechanism.
+The *physical* vector layout — column type, dimension, ANN index, partitioning, **and the physical primary key** — is **not decided yet**. It is open decision **D-8**, resolved in Phase 3 Stage 2 after a bake-off on real Indic data ([ADR-010](DECISIONS/ADR-010-defer-vector-storage-layout.md), [research/D8_BAKEOFF.md](research/D8_BAKEOFF.md)). Tenant isolation does not depend on any of it: scoped repositories, composite tenant foreign keys and (from Phase 15) RLS are independent of physical layout, and partitioning was never the isolation mechanism.
 
 ---
 
@@ -426,7 +426,7 @@ Recorded so they are not re-proposed without new information:
 | Kafka | Redis Streams covers current volume; Taskiq's broker abstraction is the exit | sustained multi-thousand msg/s, or we need event replay/log compaction |
 | An orchestration framework in `rn_voice.media` | a framework in the byte loop ends the transport's independent testability and replaceability; latency is the lesser problem | **never.** Higher layers are a different question — [ADR-009](DECISIONS/ADR-009-orchestration-boundary-for-live-sessions.md) |
 | Orchestration inside a live turn *today* | nothing needs it yet, and nothing about turn latency has been measured | a concrete flow wants it — then walk the ADR-009 gate rather than reopening this row |
-| Freezing the embedding dimension or vector partitioning | the dimension is part of the column type and partitioning cannot be retrofitted; the placeholder was a vendor default, not a measurement | the Phase 3 Indic bake-off closes open decision D-8 — [ADR-010](DECISIONS/ADR-010-defer-vector-storage-layout.md) |
+| Freezing the embedding model, dimension, vector column type, ANN index, partitioning, or `document_chunks`' physical key | the dimension is part of the column type and partitioning cannot be retrofitted; the placeholder was a vendor default, not a measurement; the composite key existed only to serve the withdrawn partitioning | the Phase 3 Stage 2 Indic bake-off closes open decision D-8 and ADR-011 records the answer **with the numbers** — [ADR-010](DECISIONS/ADR-010-defer-vector-storage-layout.md), [research/D8_BAKEOFF.md](research/D8_BAKEOFF.md) |
 | n8n as the conversation engine | the realtime brain belongs in typed, tested, versioned code | never — n8n handles post-call business automation only |
 | Direct SIP to the model provider | removes our media tap: no recording, no custom barge-in policy, no per-call fallback, and media terminates outside India | as a documented degraded fast-path |
 | A no-code agent builder | premature; the data model supports it | clients need self-service configuration |

@@ -1,0 +1,257 @@
+# =============================================================================
+# SUPERSEDED - this review is COMPLETE.
+#
+# Every template in this bundle was approved by the Rise Next team on
+# 2026-08-11. The rows below still read `decision: pending` because this file is
+# the export that was put IN FRONT OF the reviewer, not the record of what they
+# decided. It is kept, unedited, as the audit trail of exactly what text was
+# shown - "what did the reviewer actually read" has to have an answer.
+#
+# THE AUTHORITATIVE REVIEW STATE IS:
+#   ../source/phrasebook.yaml     101/101 templates native_reviewed
+#   ../source/spot_checks.yaml    76/76 spot checks approved
+#
+# Do not read this file as a work queue, and do not re-apply it: running
+# `apply-review` over these rows would do nothing (a pending row yields no
+# decision), but a reader who trusts the header would conclude the review never
+# happened. Re-export with `export-review` if a future change reopens one.
+# =============================================================================
+
+# Review bundle: hi-latn
+#
+# 11 templates covering 104 generated
+# queries (9.5 queries per template reviewed).
+#
+# For each row: read `template_text`, look at `samples` to see what it actually
+# produced, then fill in `decision` and the questions below it.
+#
+#   approved    natural, means the same thing, correct script
+#   needs_edit  nearly right - put your replacement in `corrected_text`
+#   rejected    unusable as written; it needs rewriting, not patching
+#
+# `reviewed_by` and `reviewed_on` (YYYY-MM-DD) are REQUIRED on any decision other
+# than pending. A review nobody can be asked about is not a review.
+#
+# The most useful thing you can flag: a sentence that is grammatically correct and
+# that no caller would ever say. That is the failure this whole exercise exists to
+# catch, and it is invisible to everyone who does not speak the language.
+
+subset: hi-latn
+templates:
+- template_id: hi-latn-what-is
+  subset: hi-latn
+  intent: what_is
+  style: canonical
+  template_text: '{service} kya hai'
+  generated_query_count: 14
+  samples:
+  - administration and business support kya hai
+  - administration and busienss support kya hai
+  - AI automation kya hai
+  - AI automatoin kya hai
+  decision: pending
+  corrected_text: null
+  natural: null
+  semantically_equivalent: null
+  script_correct: null
+  code_mixing_natural: null
+  grades_correct: null
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- template_id: hi-latn-pricing
+  subset: hi-latn
+  intent: pricing
+  style: conversational
+  template_text: '{service} ka kitna kharcha aayega'
+  generated_query_count: 14
+  samples:
+  - administration and business support ka kitna kharcha aayega
+  - administration and business support ka kinta kharcha aayega
+  - AI automation ka kitna kharcha aayega
+  - AI auotmation ka kitna kharcha aayega
+  decision: pending
+  corrected_text: null
+  natural: null
+  semantically_equivalent: null
+  script_correct: null
+  code_mixing_natural: null
+  grades_correct: null
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- template_id: hi-latn-how-long
+  subset: hi-latn
+  intent: how_long
+  style: conversational
+  template_text: '{service} mein kitna time lagta hai'
+  generated_query_count: 14
+  samples:
+  - administration and business support mein kitna time lagta hai
+  - adminisrtation and business support mein kitna time lagta hai
+  - AI automation mein kitna time lagta hai
+  - AI uatomation mein kitna time lagta hai
+  decision: pending
+  corrected_text: null
+  natural: null
+  semantically_equivalent: null
+  script_correct: null
+  code_mixing_natural: null
+  grades_correct: null
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- template_id: hi-latn-company
+  subset: hi-latn
+  intent: company
+  style: canonical
+  template_text: Rise Next kya kaam karti hai
+  generated_query_count: 2
+  samples:
+  - Rise Next kya kaam karti hai
+  - Rise Next kya kaa mkarti hai
+  decision: pending
+  corrected_text: null
+  natural: null
+  semantically_equivalent: null
+  script_correct: null
+  code_mixing_natural: null
+  grades_correct: null
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- template_id: hi-latn-process
+  subset: hi-latn
+  intent: process
+  style: conversational
+  template_text: aapka kaam karne ka process kya hai
+  generated_query_count: 2
+  samples:
+  - aapka kaam karne ka process kya hai
+  - aapka kaam karne k aprocess kya hai
+  decision: pending
+  corrected_text: null
+  natural: null
+  semantically_equivalent: null
+  script_correct: null
+  code_mixing_natural: null
+  grades_correct: null
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- template_id: hi-latn-lending
+  subset: hi-latn
+  intent: lending
+  style: canonical
+  template_text: kya aap loan dete hain
+  generated_query_count: 2
+  samples:
+  - kya aap loan dete hain
+  - kya aap olan dete hain
+  decision: pending
+  corrected_text: null
+  natural: null
+  semantically_equivalent: null
+  script_correct: null
+  code_mixing_natural: null
+  grades_correct: null
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- template_id: hi-latn-guarantee
+  subset: hi-latn
+  intent: guarantees
+  style: terse
+  template_text: guarantee de sakte hain kya
+  generated_query_count: 2
+  samples:
+  - guarantee de sakte hain kya
+  - guarantee de sakte hain kay
+  decision: pending
+  corrected_text: null
+  natural: null
+  semantically_equivalent: null
+  script_correct: null
+  code_mixing_natural: null
+  grades_correct: null
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- template_id: hi-latn-out-of-scope
+  subset: hi-latn
+  intent: out_of_scope
+  style: conversational
+  template_text: jo aapki list mein nahi hai wo kaam bhi karte ho kya
+  generated_query_count: 2
+  samples:
+  - jo aapki list mein nahi hai wo kaam bhi karte ho kya
+  - jo aapki lis tmein nahi hai wo kaam bhi karte ho kya
+  decision: pending
+  corrected_text: null
+  natural: null
+  semantically_equivalent: null
+  script_correct: null
+  code_mixing_natural: null
+  grades_correct: null
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- template_id: hi-latn-cap-atom
+  subset: hi-latn
+  intent: capability_specific
+  style: conversational
+  template_text: kya aap {capability} banate hain
+  generated_query_count: 48
+  samples:
+  - kya aap AI Voice Agents banate hain
+  - kya aap AI Voice Agents banat ehain
+  - kya aap AI Workflow Automation banate hain
+  - kya aap AI WorkflowA utomation banate hain
+  decision: pending
+  corrected_text: null
+  natural: null
+  semantically_equivalent: null
+  script_correct: null
+  code_mixing_natural: null
+  grades_correct: null
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- template_id: hi-latn-industries
+  subset: hi-latn
+  intent: industries
+  style: canonical
+  template_text: aap kaunsi industries ke saath kaam karte hain
+  generated_query_count: 2
+  samples:
+  - aap kaunsi industries ke saath kaam karte hain
+  - aap kaunsi indsutries ke saath kaam karte hain
+  decision: pending
+  corrected_text: null
+  natural: null
+  semantically_equivalent: null
+  script_correct: null
+  code_mixing_natural: null
+  grades_correct: null
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- template_id: hi-latn-technology
+  subset: hi-latn
+  intent: technology
+  style: conversational
+  template_text: aap kaunsi technology use karte ho
+  generated_query_count: 2
+  samples:
+  - aap kaunsi technology use karte ho
+  - aap kaunsi technology use katre ho
+  decision: pending
+  corrected_text: null
+  natural: null
+  semantically_equivalent: null
+  script_correct: null
+  code_mixing_natural: null
+  grades_correct: null
+  reviewed_by: null
+  reviewed_on: null
+  notes: null

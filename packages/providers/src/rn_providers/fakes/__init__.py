@@ -7,14 +7,23 @@ tests, the evaluation harness, a local demo — needs the same one. A fake copie
 into a test directory drifts from the interface it fakes, and the drift is
 invisible until a real adapter arrives.
 
-Phase 2 ships the LLM fake only, because Phase 2 has only one seam. Telephony,
-realtime voice, STT, TTS, messaging and storage fakes arrive with their seams.
+Two fakes exist, one per seam that exists: the LLM fake (Phase 2) and the
+embedding fake (Phase 3). Telephony, realtime voice, STT, TTS, messaging and
+storage fakes arrive with their seams.
 
 **Nothing here performs I/O.** No sockets, no sleeps, no clock reads, no
-randomness. A fake that is not deterministic is a source of flakes rather than a
-defence against them.
+randomness — and, asserted by `tests/unit/test_framework_independence.py`, no
+transport library either: importing this package must not load `httpx`,
+`websockets` or a vendor SDK. That is why concrete adapters are reached by their
+own module rather than re-exported from `rn_providers`.
+
+Determinism here means *reproducible across processes*, not merely "no `random`
+call": `hash()` is salted per process for `str`, so a fake that hashed text with it
+would return different values in two interpreters. The embedding fake uses
+`hashlib` for exactly that reason.
 """
 
+from rn_providers.fakes.embeddings import FakeEmbeddingProvider
 from rn_providers.fakes.llm import (
     FakeLLMProvider,
     ScriptedToolCall,
@@ -23,6 +32,7 @@ from rn_providers.fakes.llm import (
 )
 
 __all__ = [
+    "FakeEmbeddingProvider",
     "FakeLLMProvider",
     "ScriptExhaustedError",
     "ScriptedToolCall",

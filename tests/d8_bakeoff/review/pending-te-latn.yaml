@@ -1,0 +1,257 @@
+# =============================================================================
+# SUPERSEDED - this review is COMPLETE.
+#
+# Every template in this bundle was approved by the Rise Next team on
+# 2026-08-11. The rows below still read `decision: pending` because this file is
+# the export that was put IN FRONT OF the reviewer, not the record of what they
+# decided. It is kept, unedited, as the audit trail of exactly what text was
+# shown - "what did the reviewer actually read" has to have an answer.
+#
+# THE AUTHORITATIVE REVIEW STATE IS:
+#   ../source/phrasebook.yaml     101/101 templates native_reviewed
+#   ../source/spot_checks.yaml    76/76 spot checks approved
+#
+# Do not read this file as a work queue, and do not re-apply it: running
+# `apply-review` over these rows would do nothing (a pending row yields no
+# decision), but a reader who trusts the header would conclude the review never
+# happened. Re-export with `export-review` if a future change reopens one.
+# =============================================================================
+
+# Review bundle: te-latn
+#
+# 11 templates covering 104 generated
+# queries (9.5 queries per template reviewed).
+#
+# For each row: read `template_text`, look at `samples` to see what it actually
+# produced, then fill in `decision` and the questions below it.
+#
+#   approved    natural, means the same thing, correct script
+#   needs_edit  nearly right - put your replacement in `corrected_text`
+#   rejected    unusable as written; it needs rewriting, not patching
+#
+# `reviewed_by` and `reviewed_on` (YYYY-MM-DD) are REQUIRED on any decision other
+# than pending. A review nobody can be asked about is not a review.
+#
+# The most useful thing you can flag: a sentence that is grammatically correct and
+# that no caller would ever say. That is the failure this whole exercise exists to
+# catch, and it is invisible to everyone who does not speak the language.
+
+subset: te-latn
+templates:
+- template_id: te-latn-what-is
+  subset: te-latn
+  intent: what_is
+  style: canonical
+  template_text: '{service} ante enti'
+  generated_query_count: 14
+  samples:
+  - administration and business support ante enti
+  - administration nad business support ante enti
+  - AI automation ante enti
+  - AI autmoation ante enti
+  decision: pending
+  corrected_text: null
+  natural: null
+  semantically_equivalent: null
+  script_correct: null
+  code_mixing_natural: null
+  grades_correct: null
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- template_id: te-latn-pricing
+  subset: te-latn
+  intent: pricing
+  style: conversational
+  template_text: '{service} kharchu entha avutundi'
+  generated_query_count: 14
+  samples:
+  - administration and business support kharchu entha avutundi
+  - administration and businesss upport kharchu entha avutundi
+  - AI automation kharchu entha avutundi
+  - AI automation kharch uentha avutundi
+  decision: pending
+  corrected_text: null
+  natural: null
+  semantically_equivalent: null
+  script_correct: null
+  code_mixing_natural: null
+  grades_correct: null
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- template_id: te-latn-how-long
+  subset: te-latn
+  intent: how_long
+  style: conversational
+  template_text: '{service} ki entha time padutundi'
+  generated_query_count: 14
+  samples:
+  - administration and business support ki entha time padutundi
+  - administration and business support ki entha tim epadutundi
+  - AI automation ki entha time padutundi
+  - AI automation ki entha time paduutndi
+  decision: pending
+  corrected_text: null
+  natural: null
+  semantically_equivalent: null
+  script_correct: null
+  code_mixing_natural: null
+  grades_correct: null
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- template_id: te-latn-company
+  subset: te-latn
+  intent: company
+  style: canonical
+  template_text: Rise Next emi chestundi
+  generated_query_count: 2
+  samples:
+  - Rise Next emi chestundi
+  - Rise Nex temi chestundi
+  decision: pending
+  corrected_text: null
+  natural: null
+  semantically_equivalent: null
+  script_correct: null
+  code_mixing_natural: null
+  grades_correct: null
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- template_id: te-latn-process
+  subset: te-latn
+  intent: process
+  style: conversational
+  template_text: mee process ela untundi
+  generated_query_count: 2
+  samples:
+  - mee process ela untundi
+  - mee process ela untudni
+  decision: pending
+  corrected_text: null
+  natural: null
+  semantically_equivalent: null
+  script_correct: null
+  code_mixing_natural: null
+  grades_correct: null
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- template_id: te-latn-lending
+  subset: te-latn
+  intent: lending
+  style: canonical
+  template_text: meeru loan istara
+  generated_query_count: 2
+  samples:
+  - meeru loan istara
+  - meeru loan itsara
+  decision: pending
+  corrected_text: null
+  natural: null
+  semantically_equivalent: null
+  script_correct: null
+  code_mixing_natural: null
+  grades_correct: null
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- template_id: te-latn-guarantee
+  subset: te-latn
+  intent: guarantees
+  style: terse
+  template_text: guarantee ivvagalara
+  generated_query_count: 2
+  samples:
+  - guarantee ivvagalara
+  - guarnatee ivvagalara
+  decision: pending
+  corrected_text: null
+  natural: null
+  semantically_equivalent: null
+  script_correct: null
+  code_mixing_natural: null
+  grades_correct: null
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- template_id: te-latn-out-of-scope
+  subset: te-latn
+  intent: out_of_scope
+  style: conversational
+  template_text: mee list lo leni panulu kuda chestara
+  generated_query_count: 2
+  samples:
+  - mee list lo leni panulu kuda chestara
+  - mee list lo leni panul ukuda chestara
+  decision: pending
+  corrected_text: null
+  natural: null
+  semantically_equivalent: null
+  script_correct: null
+  code_mixing_natural: null
+  grades_correct: null
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- template_id: te-latn-cap-atom
+  subset: te-latn
+  intent: capability_specific
+  style: conversational
+  template_text: meeru {capability} chestara
+  generated_query_count: 48
+  samples:
+  - meeru AI Voice Agents chestara
+  - meeru AI Voiec Agents chestara
+  - meeru AI Workflow Automation chestara
+  - meeru AI Wokrflow Automation chestara
+  decision: pending
+  corrected_text: null
+  natural: null
+  semantically_equivalent: null
+  script_correct: null
+  code_mixing_natural: null
+  grades_correct: null
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- template_id: te-latn-industries
+  subset: te-latn
+  intent: industries
+  style: canonical
+  template_text: meeru ye industries tho pani chestaru
+  generated_query_count: 2
+  samples:
+  - meeru ye industries tho pani chestaru
+  - meeru ye industries tho pan ichestaru
+  decision: pending
+  corrected_text: null
+  natural: null
+  semantically_equivalent: null
+  script_correct: null
+  code_mixing_natural: null
+  grades_correct: null
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- template_id: te-latn-technology
+  subset: te-latn
+  intent: technology
+  style: conversational
+  template_text: meeru ye technology vaadatharu
+  generated_query_count: 2
+  samples:
+  - meeru ye technology vaadatharu
+  - meeru ye tcehnology vaadatharu
+  decision: pending
+  corrected_text: null
+  natural: null
+  semantically_equivalent: null
+  script_correct: null
+  code_mixing_natural: null
+  grades_correct: null
+  reviewed_by: null
+  reviewed_on: null
+  notes: null

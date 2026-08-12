@@ -2,8 +2,8 @@
 
 > **This document is the primary product source of truth.** When code and this document disagree, one of them is a bug — decide which, then fix it in the same change.
 >
-> **Status:** Phase 0 (architecture initialised, no product code written)
-> **Last updated:** 2026-07-28
+> **Status:** Phases 0–2 complete and merged; **Phase 3 Stage 1 complete** — the schema-independent foundations, the D-8 bake-off harness, and the Rise Next evaluation corpus (143 passages, 804 queries, human review closed 2026-08-11). Stage 2 is not started and is correctly blocked on D-8. See [docs/ROADMAP.md](docs/ROADMAP.md), which is the authority on what exists.
+> **Last updated:** 2026-07-30
 > **Companions:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · [docs/ROADMAP.md](docs/ROADMAP.md) · [docs/DECISIONS/](docs/DECISIONS/)
 
 ---
@@ -241,7 +241,7 @@ Phase numbers below refer to the sequence in [docs/ROADMAP.md](docs/ROADMAP.md#t
 | **D-5** | **Recording.** Do we record calls at all in V1? Per-tenant configurable? | Changes storage, retention, consent flow and the disclosure script. | Phase 8. Cheap to keep open **only if** the media bridge is built with a disabled tap point from Phase 5. |
 | **D-6** | **Provisioned capacity.** Confirm telephony channel capacity and realtime-model concurrency limits commercially. | The "100 concurrent calls" target is unverifiable without this. | Phase 16, and therefore the entire V1 concurrency claim. |
 | **D-7** | **Auth plan tier.** More than 10 custom roles, or verified-domain auto-join, requires a paid add-on. | Affects the roles/permissions model. | Phase 15. Avoidable entirely by keeping the platform role catalogue at ≤10 and putting per-tenant roles in our own database. |
-| **D-8** | **Production embedding model and vector storage layout.** Which embedding model, at what dimension, in which column type, with what index and partitioning — if any. | The embedding dimension is part of the Postgres column type, so changing it later is a full re-embed **plus a table rewrite of every tenant**; partitioning cannot be retrofitted onto a live vector table at all. These are the two least reversible decisions in the system, and the current placeholder (1536) is a vendor default, not a measured choice. No per-language benchmark exists for our providers on Indic text. | Phase 3. Resolved by a bake-off on real Indic and code-mixed data. Nothing before Phase 3 needs it — Phase 1 creates no vector column. See [ADR-010](docs/DECISIONS/ADR-010-defer-vector-storage-layout.md). |
+| **D-8** | **Production embedding model and vector storage layout.** Which embedding model, at what dimension, in which column type, with what index and partitioning — if any. | The embedding dimension is part of the Postgres column type, so changing it later is a full re-embed **plus a table rewrite of every tenant**; partitioning cannot be retrofitted onto a live vector table at all. These are the two least reversible decisions in the system, and the current placeholder (1536) is a vendor default, not a measured choice. No per-language benchmark exists for our providers on Indic text. | Phase 3, **Stage 2**. Resolved by a bake-off on real Indic and code-mixed data. Nothing before it needs the answer — Phase 1 creates no vector column, and Phase 3 Stage 1 creates none either. The harness, metrics, gates and candidate manifest now exist and run offline, and the evaluation corpus — 143 passages, 804 queries — completed native-speaker review on 2026-08-11. What remains is superseded Rise Next content for the `stale` adversarial role, a decision on the `size` gate, and approval for a paid run. See [ADR-010](docs/DECISIONS/ADR-010-defer-vector-storage-layout.md) and [docs/research/D8_BAKEOFF.md](docs/research/D8_BAKEOFF.md) §11. |
 
 ---
 

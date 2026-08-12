@@ -108,3 +108,13 @@ desktop.ini
 logs/
 tmp/
 .scratch/
+
+# ---------------------------------------------------------------------------
+# D-8 bake-off run artifacts
+#
+# Runs accumulate; most of them are exploratory and are noise in a diff. The ONE
+# run that ADR-011 cites is committed deliberately with `git add -f`, so the
+# decision's evidence is in the repository while the noise is not.
+# ---------------------------------------------------------------------------
+tests/d8_bakeoff/results/*
+!tests/d8_bakeoff/results/README.md

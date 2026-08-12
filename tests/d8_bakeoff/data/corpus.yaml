@@ -1,0 +1,25 @@
+# SEED CORPUS — RETIRED 2026-08-11. Deliberately empty.
+#
+# This file held 18 hand-written passages about a plausible-but-invented Indian
+# software services company. They existed to exercise the harness before any real
+# business content had been supplied, and they did that job.
+#
+# They are gone because they cannot do the next job. Every one was
+# `non_decision_synthetic`: invented outright, and therefore unable to support a
+# decision no matter who reviews it — there is nothing real for a reviewer to
+# vouch for. Keeping them alongside the official Rise Next material would have
+# meant a corpus whose passages were part real and part fiction, with only a tier
+# field telling them apart, and every count in every report needing a footnote.
+#
+# The file itself stays because `load_dataset` requires the seed pair to be
+# present together: half a pair means someone deleted one side, and loading the
+# survivor would silently change what the benchmark measures. Empty is a
+# statement; missing would be an accident.
+#
+# NOTHING GOES BACK IN HERE. New content belongs in `source/risenext.yaml` with a
+# `source_reference`, so it arrives as `source_grounded` and can carry a decision.
+# If you find yourself wanting to add a passage here, what you actually want is
+# for the business to supply the fact.
+
+dataset_version: 3
+passages: []

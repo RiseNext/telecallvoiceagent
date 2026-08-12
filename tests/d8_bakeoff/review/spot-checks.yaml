@@ -1,0 +1,720 @@
+# =============================================================================
+# SUPERSEDED - these spot checks are COMPLETE.
+#
+# All 76 queries below were APPROVED by the Rise Next team on 2026-08-11. The
+# rows still read `decision: pending` because this file is the batch that was
+# handed to the reviewer, not the record of their judgement. Kept unedited as
+# the audit trail of exactly which queries were sampled.
+#
+# THE AUTHORITATIVE RECORD IS ../source/spot_checks.yaml - that is what the
+# corpus build reads, and a judgement recorded anywhere else would be silently
+# overwritten by the next build.
+# =============================================================================
+
+# SPOT-CHECK BATCH — individual judgements on generated queries.
+#
+# 76 queries across 8 subset(s). This is the bound on
+# template-level review: approving one template validates the *phrasing* of
+# everything generated from it, but not whether each SUBSTITUTION reads naturally.
+# A frame that is fine for 'website development' can be wrong for 'cloud migration'.
+#
+# For each row, read `text` as a caller would say it and set `decision`:
+#
+#   approved   a caller would say this, exactly as written
+#   rejected   they would not — say why in `notes`
+#
+# There is deliberately no 'needs_edit'. A query is generated, so it cannot be
+# edited in place — the next build would overwrite it. If the wording is wrong,
+# the TEMPLATE is wrong: reject here and fix the template in the review bundle.
+#
+# `reviewed_by` and `reviewed_on` (YYYY-MM-DD) are REQUIRED on any decision other
+# than pending, and a model's name is refused. A review nobody can be asked about
+# is indistinguishable from no review.
+#
+# When done, copy the completed rows into source/spot_checks.yaml and rebuild.
+
+spot_checks:
+- query_id: q-cm-hi-cap-atom-ai-voice-agents
+  subset: codemix-en-hi
+  intent: capability_specific
+  text: AI Voice Agents ka kaam bhi karte ho kya
+  from_template: cm-hi-cap-atom
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-cm-hi-cap-atom-business-consultation
+  subset: codemix-en-hi
+  intent: capability_specific
+  text: Business Consultation ka kaam bhi karte ho kya
+  from_template: cm-hi-cap-atom
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-cm-hi-cap-atom-customer-support-automation
+  subset: codemix-en-hi
+  intent: capability_specific
+  text: Customer Support Automation ka kaam bhi karte ho kya
+  from_template: cm-hi-cap-atom
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-cm-hi-cap-atom-mortgage-guidance
+  subset: codemix-en-hi
+  intent: capability_specific
+  text: Mortgage Guidance ka kaam bhi karte ho kya
+  from_template: cm-hi-cap-atom
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-cm-hi-cap-atom-real-estate-management-platforms
+  subset: codemix-en-hi
+  intent: capability_specific
+  text: Real Estate Management Platforms ka kaam bhi karte ho kya
+  from_template: cm-hi-cap-atom
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-cm-hi-capability-ai-automation
+  subset: codemix-en-hi
+  intent: capability
+  text: AI automation mein kya kya included hota hai
+  from_template: cm-hi-capability
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-cm-hi-capability-technology-solutions
+  subset: codemix-en-hi
+  intent: capability
+  text: technology solutions mein kya kya included hota hai
+  from_template: cm-hi-capability
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-cm-hi-out-of-scope
+  subset: codemix-en-hi
+  intent: out_of_scope
+  text: aap log accounting aur tax filing bhi karte ho kya
+  from_template: cm-hi-out-of-scope
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-cm-hi-pricing-digital-marketing
+  subset: codemix-en-hi
+  intent: pricing
+  text: digital marketing ka price kitna hoga approximately
+  from_template: cm-hi-pricing
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-cm-hi-what-is-admin-support
+  subset: codemix-en-hi
+  intent: what_is
+  text: administration and business support ke baare mein thoda bata do
+  from_template: cm-hi-what-is
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-cm-te-cap-atom-ai-voice-agents
+  subset: codemix-en-te
+  intent: capability_specific
+  text: AI Voice Agents kuda chestara meeru
+  from_template: cm-te-cap-atom
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-cm-te-cap-atom-business-consultation
+  subset: codemix-en-te
+  intent: capability_specific
+  text: Business Consultation kuda chestara meeru
+  from_template: cm-te-cap-atom
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-cm-te-cap-atom-customer-support-automation
+  subset: codemix-en-te
+  intent: capability_specific
+  text: Customer Support Automation kuda chestara meeru
+  from_template: cm-te-cap-atom
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-cm-te-cap-atom-mortgage-guidance
+  subset: codemix-en-te
+  intent: capability_specific
+  text: Mortgage Guidance kuda chestara meeru
+  from_template: cm-te-cap-atom
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-cm-te-cap-atom-real-estate-management-platforms
+  subset: codemix-en-te
+  intent: capability_specific
+  text: Real Estate Management Platforms kuda chestara meeru
+  from_template: cm-te-cap-atom
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-cm-te-guarantee
+  subset: codemix-en-te
+  intent: guarantees
+  text: sales guarantee ivvagalara
+  from_template: cm-te-guarantee
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-cm-te-how-long-loan-assistance
+  subset: codemix-en-te
+  intent: how_long
+  text: loan assistance ki approximately entha time padutundi
+  from_template: cm-te-how-long
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-cm-te-out-of-scope
+  subset: codemix-en-te
+  intent: out_of_scope
+  text: meeru accounting mariyu tax filing kuda chestara
+  from_template: cm-te-out-of-scope
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-cm-te-pricing-digital-marketing
+  subset: codemix-en-te
+  intent: pricing
+  text: digital marketing price entha untundi approximately
+  from_template: cm-te-pricing
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-cm-te-technology
+  subset: codemix-en-te
+  intent: technology
+  text: meeru ee technology stack vaadatharu
+  from_template: cm-te-technology
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-xs-deva-cap-atom-admin-dashboards
+  subset: cross-script
+  intent: capability_specific
+  text: क्या आप Admin Dashboards का काम करते हैं
+  from_template: xs-deva-cap-atom
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-xs-deva-capability-digital-marketing
+  subset: cross-script
+  intent: capability
+  text: डिजिटल मार्केटिंग में क्या क्या मिलता है
+  from_template: xs-deva-capability
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-xs-deva-what-is-real-estate
+  subset: cross-script
+  intent: what_is
+  text: रियल एस्टेट सॉल्यूशंस क्या है
+  from_template: xs-deva-what-is
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-en-cap-atom-admin-dashboards
+  subset: en
+  intent: capability_specific
+  text: do you provide Admin Dashboards
+  from_template: en-cap-atom
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-en-cap-atom-ai-sales-assistants
+  subset: en
+  intent: capability_specific
+  text: do you provide AI Sales Assistants
+  from_template: en-cap-atom
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-en-cap-atom-application-processing-support
+  subset: en
+  intent: capability_specific
+  text: do you provide Application Processing Support
+  from_template: en-cap-atom
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-en-cap-atom-business-loan-assistance
+  subset: en
+  intent: capability_specific
+  text: do you provide Business Loan Assistance
+  from_template: en-cap-atom
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-en-cap-atom-compliance-assistance
+  subset: en
+  intent: capability_specific
+  text: do you provide Compliance Assistance
+  from_template: en-cap-atom
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-en-cap-atom-crm-development
+  subset: en
+  intent: capability_specific
+  text: do you provide CRM Development
+  from_template: en-cap-atom
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-en-cap-atom-customer-support-operations
+  subset: en
+  intent: capability_specific
+  text: do you provide Customer Support Operations
+  from_template: en-cap-atom
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-en-cap-atom-erp-solutions
+  subset: en
+  intent: capability_specific
+  text: do you provide ERP Solutions
+  from_template: en-cap-atom
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-en-cap-atom-hr-management-systems
+  subset: en
+  intent: capability_specific
+  text: do you provide HR Management Systems
+  from_template: en-cap-atom
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-en-cap-atom-meta-ads
+  subset: en
+  intent: capability_specific
+  text: do you provide Meta Ads
+  from_template: en-cap-atom
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-en-cap-atom-performance-marketing
+  subset: en
+  intent: capability_specific
+  text: do you provide Performance Marketing
+  from_template: en-cap-atom
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-en-cap-atom-professional-photography
+  subset: en
+  intent: capability_specific
+  text: do you provide Professional Photography
+  from_template: en-cap-atom
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-en-cap-atom-reels-creation
+  subset: en
+  intent: capability_specific
+  text: do you provide Reels Creation
+  from_template: en-cap-atom
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-en-cap-atom-video-editing
+  subset: en
+  intent: capability_specific
+  text: do you provide Video Editing
+  from_template: en-cap-atom
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-en-capability-ai-automation
+  subset: en
+  intent: capability
+  text: what does AI automation include
+  from_template: en-capability
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-en-capability-technology-solutions
+  subset: en
+  intent: capability
+  text: what does technology solutions include
+  from_template: en-capability
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-en-how-long-admin-support
+  subset: en
+  intent: how_long
+  text: how long does administration and business support usually take to deliver
+  from_template: en-how-long
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-en-how-long-real-estate
+  subset: en
+  intent: how_long
+  text: how long does real estate solutions usually take to deliver
+  from_template: en-how-long
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-en-lending-approval-transpose
+  subset: en
+  intent: lending
+  text: ca nyou approve my home loan
+  from_template: en-lending-approval
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-en-pricing-canonical-branding-creative
+  subset: en
+  intent: pricing
+  text: how much does branding and creative services cost
+  from_template: en-pricing-canonical
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-en-pricing-fixed-admin-support
+  subset: en
+  intent: pricing
+  text: can you just give me a fixed price for administration and business support
+  from_template: en-pricing-fixed
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-en-pricing-fixed-real-estate
+  subset: en
+  intent: pricing
+  text: can you just give me a fixed price for real estate solutions
+  from_template: en-pricing-fixed
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-en-pricing-terse-digital-marketing
+  subset: en
+  intent: pricing
+  text: digital marketing price?
+  from_template: en-pricing-terse
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-en-technology
+  subset: en
+  intent: technology
+  text: what technologies do you build with
+  from_template: en-technology
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-hi-deva-cap-atom-admin-dashboards
+  subset: hi-deva
+  intent: capability_specific
+  text: क्या आप Admin Dashboards बनाते हैं
+  from_template: hi-deva-cap-atom
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-hi-deva-cap-atom-financial-consultation
+  subset: hi-deva
+  intent: capability_specific
+  text: क्या आप Financial Consultation बनाते हैं
+  from_template: hi-deva-cap-atom
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-hi-deva-capability-loan-assistance
+  subset: hi-deva
+  intent: capability
+  text: लोन असिस्टेंस में क्या क्या शामिल होता है
+  from_template: hi-deva-capability
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-hi-deva-pricing-digital-marketing
+  subset: hi-deva
+  intent: pricing
+  text: डिजिटल मार्केटिंग का खर्च कितना आएगा
+  from_template: hi-deva-pricing
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-hi-latn-cap-atom-ai-voice-agents
+  subset: hi-latn
+  intent: capability_specific
+  text: kya aap AI Voice Agents banate hain
+  from_template: hi-latn-cap-atom
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-hi-latn-cap-atom-business-consultation
+  subset: hi-latn
+  intent: capability_specific
+  text: kya aap Business Consultation banate hain
+  from_template: hi-latn-cap-atom
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-hi-latn-cap-atom-customer-support-automation
+  subset: hi-latn
+  intent: capability_specific
+  text: kya aap Customer Support Automation banate hain
+  from_template: hi-latn-cap-atom
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-hi-latn-cap-atom-mortgage-guidance
+  subset: hi-latn
+  intent: capability_specific
+  text: kya aap Mortgage Guidance banate hain
+  from_template: hi-latn-cap-atom
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-hi-latn-cap-atom-real-estate-management-platforms
+  subset: hi-latn
+  intent: capability_specific
+  text: kya aap Real Estate Management Platforms banate hain
+  from_template: hi-latn-cap-atom
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-hi-latn-guarantee
+  subset: hi-latn
+  intent: guarantees
+  text: guarantee de sakte hain kya
+  from_template: hi-latn-guarantee
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-hi-latn-how-long-loan-assistance
+  subset: hi-latn
+  intent: how_long
+  text: loan assistance mein kitna time lagta hai
+  from_template: hi-latn-how-long
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-hi-latn-out-of-scope
+  subset: hi-latn
+  intent: out_of_scope
+  text: jo aapki list mein nahi hai wo kaam bhi karte ho kya
+  from_template: hi-latn-out-of-scope
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-hi-latn-pricing-loan-assistance
+  subset: hi-latn
+  intent: pricing
+  text: loan assistance ka kitna kharcha aayega
+  from_template: hi-latn-pricing
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-hi-latn-what-is-admin-support
+  subset: hi-latn
+  intent: what_is
+  text: administration and business support kya hai
+  from_template: hi-latn-what-is
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-te-latn-cap-atom-ai-voice-agents
+  subset: te-latn
+  intent: capability_specific
+  text: meeru AI Voice Agents chestara
+  from_template: te-latn-cap-atom
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-te-latn-cap-atom-business-consultation
+  subset: te-latn
+  intent: capability_specific
+  text: meeru Business Consultation chestara
+  from_template: te-latn-cap-atom
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-te-latn-cap-atom-customer-support-automation
+  subset: te-latn
+  intent: capability_specific
+  text: meeru Customer Support Automation chestara
+  from_template: te-latn-cap-atom
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-te-latn-cap-atom-mortgage-guidance
+  subset: te-latn
+  intent: capability_specific
+  text: meeru Mortgage Guidance chestara
+  from_template: te-latn-cap-atom
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-te-latn-cap-atom-real-estate-management-platforms
+  subset: te-latn
+  intent: capability_specific
+  text: meeru Real Estate Management Platforms chestara
+  from_template: te-latn-cap-atom
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-te-latn-guarantee
+  subset: te-latn
+  intent: guarantees
+  text: guarantee ivvagalara
+  from_template: te-latn-guarantee
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-te-latn-how-long-loan-assistance
+  subset: te-latn
+  intent: how_long
+  text: loan assistance ki entha time padutundi
+  from_template: te-latn-how-long
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-te-latn-out-of-scope
+  subset: te-latn
+  intent: out_of_scope
+  text: mee list lo leni panulu kuda chestara
+  from_template: te-latn-out-of-scope
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-te-latn-pricing-loan-assistance
+  subset: te-latn
+  intent: pricing
+  text: loan assistance kharchu entha avutundi
+  from_template: te-latn-pricing
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-te-latn-what-is-admin-support
+  subset: te-latn
+  intent: what_is
+  text: administration and business support ante enti
+  from_template: te-latn-what-is
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-te-telu-cap-atom-admin-dashboards
+  subset: te-telu
+  intent: capability_specific
+  text: మీరు Admin Dashboards చేస్తారా
+  from_template: te-telu-cap-atom
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-te-telu-cap-atom-digital-brochures
+  subset: te-telu
+  intent: capability_specific
+  text: మీరు Digital Brochures చేస్తారా
+  from_template: te-telu-cap-atom
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-te-telu-cap-atom-youtube-content
+  subset: te-telu
+  intent: capability_specific
+  text: మీరు YouTube Content చేస్తారా
+  from_template: te-telu-cap-atom
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-te-telu-industries
+  subset: te-telu
+  intent: industries
+  text: మీరు ఏ రంగాలలో పని చేస్తారు
+  from_template: te-telu-industries
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- query_id: q-te-telu-pricing-technology-solutions
+  subset: te-telu
+  intent: pricing
+  text: టెక్నాలజీ సొల్యూషన్స్ ఖర్చు ఎంత అవుతుంది
+  from_template: te-telu-pricing
+  decision: pending
+  reviewed_by: null
+  reviewed_on: null
+  notes: null

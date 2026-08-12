@@ -1,0 +1,276 @@
+# =============================================================================
+# SUPERSEDED - this review is COMPLETE.
+#
+# Every template in this bundle was approved by the Rise Next team on
+# 2026-08-11. The rows below still read `decision: pending` because this file is
+# the export that was put IN FRONT OF the reviewer, not the record of what they
+# decided. It is kept, unedited, as the audit trail of exactly what text was
+# shown - "what did the reviewer actually read" has to have an answer.
+#
+# THE AUTHORITATIVE REVIEW STATE IS:
+#   ../source/phrasebook.yaml     101/101 templates native_reviewed
+#   ../source/spot_checks.yaml    76/76 spot checks approved
+#
+# Do not read this file as a work queue, and do not re-apply it: running
+# `apply-review` over these rows would do nothing (a pending row yields no
+# decision), but a reader who trusts the header would conclude the review never
+# happened. Re-export with `export-review` if a future change reopens one.
+# =============================================================================
+
+# Review bundle: codemix-en-te
+#
+# 12 templates covering 106 generated
+# queries (8.8 queries per template reviewed).
+#
+# For each row: read `template_text`, look at `samples` to see what it actually
+# produced, then fill in `decision` and the questions below it.
+#
+#   approved    natural, means the same thing, correct script
+#   needs_edit  nearly right - put your replacement in `corrected_text`
+#   rejected    unusable as written; it needs rewriting, not patching
+#
+# `reviewed_by` and `reviewed_on` (YYYY-MM-DD) are REQUIRED on any decision other
+# than pending. A review nobody can be asked about is not a review.
+#
+# The most useful thing you can flag: a sentence that is grammatically correct and
+# that no caller would ever say. That is the failure this whole exercise exists to
+# catch, and it is invisible to everyone who does not speak the language.
+
+subset: codemix-en-te
+templates:
+- template_id: cm-te-what-is
+  subset: codemix-en-te
+  intent: what_is
+  style: conversational
+  template_text: '{service} gurinchi cheppandi'
+  generated_query_count: 14
+  samples:
+  - administration and business support gurinchi cheppandi
+  - administration and business supporth gurinchi cheppandi
+  - AI automation gurinchi cheppandi
+  - AI automation gurinch icheppandi
+  decision: pending
+  corrected_text: null
+  natural: null
+  semantically_equivalent: null
+  script_correct: null
+  code_mixing_natural: null
+  grades_correct: null
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- template_id: cm-te-pricing
+  subset: codemix-en-te
+  intent: pricing
+  style: conversational
+  template_text: '{service} price entha untundi approximately'
+  generated_query_count: 14
+  samples:
+  - administration and business support price entha untundi approximately
+  - administration and busines ssupport price entha untundi approximately
+  - AI automation price entha untundi approximately
+  - AI automation prcie entha untundi approximately
+  decision: pending
+  corrected_text: null
+  natural: null
+  semantically_equivalent: null
+  script_correct: null
+  code_mixing_natural: null
+  grades_correct: null
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- template_id: cm-te-how-long
+  subset: codemix-en-te
+  intent: how_long
+  style: conversational
+  template_text: '{service} ki approximately entha time padutundi'
+  generated_query_count: 14
+  samples:
+  - administration and business support ki approximately entha time padutundi
+  - administration and business supfort ki approximately entha time padutundi
+  - AI automation ki approximately entha time padutundi
+  - AI automtaion ki approximately entha time padutundi
+  decision: pending
+  corrected_text: null
+  natural: null
+  semantically_equivalent: null
+  script_correct: null
+  code_mixing_natural: null
+  grades_correct: null
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- template_id: cm-te-company
+  subset: codemix-en-te
+  intent: company
+  style: conversational
+  template_text: Rise Next exactly emi chestundi
+  generated_query_count: 2
+  samples:
+  - Rise Next exactly emi chestundi
+  - Rise Next exactly emi chesutndi
+  decision: pending
+  corrected_text: null
+  natural: null
+  semantically_equivalent: null
+  script_correct: null
+  code_mixing_natural: null
+  grades_correct: null
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- template_id: cm-te-process
+  subset: codemix-en-te
+  intent: process
+  style: conversational
+  template_text: mee project process ela untundi
+  generated_query_count: 2
+  samples:
+  - mee project process ela untundi
+  - mee project proceshs ela untundi
+  decision: pending
+  corrected_text: null
+  natural: null
+  semantically_equivalent: null
+  script_correct: null
+  code_mixing_natural: null
+  grades_correct: null
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- template_id: cm-te-lending
+  subset: codemix-en-te
+  intent: lending
+  style: conversational
+  template_text: meeru loan istara leda just help chestara
+  generated_query_count: 2
+  samples:
+  - meeru loan istara leda just help chestara
+  - meer uloan istara leda just help chestara
+  decision: pending
+  corrected_text: null
+  natural: null
+  semantically_equivalent: null
+  script_correct: null
+  code_mixing_natural: null
+  grades_correct: null
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- template_id: cm-te-guarantee
+  subset: codemix-en-te
+  intent: guarantees
+  style: conversational
+  template_text: sales guarantee ivvagalara
+  generated_query_count: 2
+  samples:
+  - sales guarantee ivvagalara
+  - sales guarantee ivvgaalara
+  decision: pending
+  corrected_text: null
+  natural: null
+  semantically_equivalent: null
+  script_correct: null
+  code_mixing_natural: null
+  grades_correct: null
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- template_id: cm-te-out-of-scope
+  subset: codemix-en-te
+  intent: out_of_scope
+  style: conversational
+  template_text: meeru accounting mariyu tax filing kuda chestara
+  generated_query_count: 2
+  samples:
+  - meeru accounting mariyu tax filing kuda chestara
+  - meeru accountin gmariyu tax filing kuda chestara
+  decision: pending
+  corrected_text: null
+  natural: null
+  semantically_equivalent: null
+  script_correct: null
+  code_mixing_natural: null
+  grades_correct: null
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- template_id: cm-te-policy-override
+  subset: codemix-en-te
+  intent: policy_override
+  style: conversational
+  template_text: policy vadilesi oka number cheppandi
+  generated_query_count: 2
+  samples:
+  - policy vadilesi oka number cheppandi
+  - policy vadiles ioka number cheppandi
+  decision: pending
+  corrected_text: null
+  natural: null
+  semantically_equivalent: null
+  script_correct: null
+  code_mixing_natural: null
+  grades_correct: null
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- template_id: cm-te-cap-atom
+  subset: codemix-en-te
+  intent: capability_specific
+  style: conversational
+  template_text: '{capability} kuda chestara meeru'
+  generated_query_count: 48
+  samples:
+  - AI Voice Agents kuda chestara meeru
+  - AI Voice Agents kuda chestraa meeru
+  - AI Workflow Automation kuda chestara meeru
+  - AI Workflow Automationk uda chestara meeru
+  decision: pending
+  corrected_text: null
+  natural: null
+  semantically_equivalent: null
+  script_correct: null
+  code_mixing_natural: null
+  grades_correct: null
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- template_id: cm-te-industries
+  subset: codemix-en-te
+  intent: industries
+  style: conversational
+  template_text: ye industry clients tho meeru ekkuvaga pani chestaru
+  generated_query_count: 2
+  samples:
+  - ye industry clients tho meeru ekkuvaga pani chestaru
+  - ye industry clients tho meeru ekkuwaga pani chestaru
+  decision: pending
+  corrected_text: null
+  natural: null
+  semantically_equivalent: null
+  script_correct: null
+  code_mixing_natural: null
+  grades_correct: null
+  reviewed_by: null
+  reviewed_on: null
+  notes: null
+- template_id: cm-te-technology
+  subset: codemix-en-te
+  intent: technology
+  style: conversational
+  template_text: meeru ee technology stack vaadatharu
+  generated_query_count: 2
+  samples:
+  - meeru ee technology stack vaadatharu
+  - meeru ee technoloyg stack vaadatharu
+  decision: pending
+  corrected_text: null
+  natural: null
+  semantically_equivalent: null
+  script_correct: null
+  code_mixing_natural: null
+  grades_correct: null
+  reviewed_by: null
+  reviewed_on: null
+  notes: null

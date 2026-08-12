@@ -1,0 +1,181 @@
+# =============================================================================
+# Query phrasebook — TEMPLATE
+#
+#   cp phrasebook.template.yaml phrasebook.yaml     then have native speakers fill it
+#
+# THIS FILE IS THE REVIEW-EFFICIENCY MECHANISM.
+#
+# A reviewer validates ~8 templates per language instead of ~120 generated
+# queries. Reviewing one Hindi template validates the PHRASING of every query
+# generated from it; combining it with a reviewed service name yields a natural
+# query. That propagation is recorded per generated query (`derived_from`) so it
+# is auditable, and it is bounded by a spot-check floor: a fraction of generated
+# queries in every subset must ALSO be reviewed individually, or the subset fails
+# its gate. Template review is an efficiency, not a loophole.
+#
+# WHAT WE NEED FROM A NATIVE SPEAKER, AND IT IS NOT A TRANSLATION
+#
+# Write how a caller on a phone ACTUALLY asks. Not the textbook form. The forms
+# that matter most are the ones a translator tends to sanitise away:
+#
+#   - terse:        "website cost?"          (no verb, no politeness)
+#   - impatient:    interrupting, half-formed
+#   - code-mixed:   English nouns in a Hindi/Telugu frame, which is the NORMAL
+#                   case for Indian business calls, not an edge case
+#
+# PRD 5.2's own examples are the bar:
+#   "Website toh already hai, social media management chahiye."
+#   "App development ki approximately entha avutundi?"
+#
+# If every Hindi template reads like a language textbook, the benchmark will
+# measure how well a model handles textbook Hindi, which nobody speaks on a call.
+# =============================================================================
+
+phrasebook_version: 1
+
+provenance:
+  supplied_by: FILL_ME
+  supplied_on: FILL_ME
+  notes: FILL_ME
+
+# -----------------------------------------------------------------------------
+# SERVICE NAME TRANSLATIONS
+#
+# One entry per service id from risenext.yaml. These fill the {service} slot in
+# the templates below.
+#
+# `latin` is usually the English name unchanged. Note that romanised Hindi and
+# romanised Telugu frequently keep the ENGLISH service noun — "website
+# development" stays "website development" in romanised Hindi — and that is
+# correct, not lazy. Write what people say.
+# -----------------------------------------------------------------------------
+service_names:
+  - service_id: FILL_ME # must match a service id in risenext.yaml
+    latin: FILL_ME # English / romanised form
+    devanagari: FILL_ME
+    telugu: FILL_ME
+    review_status: pending # pending | native_reviewed
+    reviewed_by: null # required when native_reviewed
+    reviewed_on: null
+
+# -----------------------------------------------------------------------------
+# QUERY TEMPLATES
+#
+# `{service}` is substituted with the matching service name for the subset's
+# script. `intent` groups templates that ask the same thing different ways — the
+# generator uses it to attach the right gold passages, so it must match an intent
+# the source material can answer.
+#
+# INTENTS the generator understands:
+#   what_is        what is this service / what do you do
+#   how_long       timeline, duration
+#   capability     does it include X
+#   process        how does a project run
+#   support        support hours, how to reach you
+#   company        who are you, where are you
+#   technology     what do you build it with
+#
+# `style` records which variant axis this template covers, so the quality gates
+# can check every subset has a spread rather than eight polite full sentences:
+#   canonical | paraphrase | terse | conversational
+#
+# Typo/noisy variants are generated MECHANICALLY from canonical templates and do
+# not need their own entries — see corpus/variants.py.
+# -----------------------------------------------------------------------------
+templates:
+  # ---------------------------------------------------------------- English
+  - id: en-what-is-canonical
+    subset: en
+    intent: what_is
+    style: canonical
+    text: "what is {service}"
+    review_status: pending
+    reviewed_by: null
+    reviewed_on: null
+
+  - id: en-how-long-terse
+    subset: en
+    intent: how_long
+    style: terse
+    text: "{service} timeline?"
+    review_status: pending
+    reviewed_by: null
+    reviewed_on: null
+
+  # ------------------------------------------------------ Hindi, Devanagari
+  # Write in Devanagari. A caller's real phrasing, not a translation of the
+  # English above.
+  - id: hi-deva-what-is-canonical
+    subset: hi-deva
+    intent: what_is
+    style: canonical
+    text: FILL_ME # e.g. "{service} क्या है"
+    review_status: pending
+    reviewed_by: null
+    reviewed_on: null
+
+  # ------------------------------------------------------- Hindi, romanised
+  - id: hi-latn-how-long-conversational
+    subset: hi-latn
+    intent: how_long
+    style: conversational
+    text: FILL_ME # e.g. "{service} mein kitna time lagta hai"
+    review_status: pending
+    reviewed_by: null
+    reviewed_on: null
+
+  # ---------------------------------------------------------- Telugu script
+  - id: te-telu-what-is-canonical
+    subset: te-telu
+    intent: what_is
+    style: canonical
+    text: FILL_ME
+    review_status: pending
+    reviewed_by: null
+    reviewed_on: null
+
+  # ------------------------------------------------------ Telugu, romanised
+  - id: te-latn-support-terse
+    subset: te-latn
+    intent: support
+    style: terse
+    text: FILL_ME # e.g. "support timings enti"
+    review_status: pending
+    reviewed_by: null
+    reviewed_on: null
+
+  # ------------------------------------------------ Code-mixed English/Hindi
+  # THE NORMAL CASE FOR INDIAN BUSINESS CALLS. English service nouns inside a
+  # Hindi frame. PRD 5.2's example is the bar.
+  - id: cm-hi-what-is-conversational
+    subset: codemix-en-hi
+    intent: what_is
+    style: conversational
+    text: FILL_ME # e.g. "{service} ke baare mein bata do"
+    review_status: pending
+    reviewed_by: null
+    reviewed_on: null
+
+  # ----------------------------------------------- Code-mixed English/Telugu
+  - id: cm-te-how-long-conversational
+    subset: codemix-en-te
+    intent: how_long
+    style: conversational
+    text: FILL_ME # e.g. "{service} ki entha time padutundi"
+    review_status: pending
+    reviewed_by: null
+    reviewed_on: null
+
+  # ------------------------------------------------------------ Cross-script
+  # A query in one script whose answer lives in a passage in ANOTHER. Write the
+  # query in the script named by `text`; the generator attaches gold passages in
+  # a different script. This is the hardest subset and the least documented
+  # anywhere, which is the whole reason D-8 exists.
+  - id: xs-deva-company
+    subset: cross-script
+    intent: company
+    style: canonical
+    text: FILL_ME # written in Devanagari, gold will be English
+    review_status: pending
+    reviewed_by: null
+    reviewed_on: null

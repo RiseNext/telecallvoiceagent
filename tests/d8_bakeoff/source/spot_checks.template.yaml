@@ -1,0 +1,63 @@
+# =============================================================================
+# SPOT CHECKS — individual human judgements on generated queries.
+#
+# Copy to `spot_checks.yaml` and fill in. Absent is a legitimate state; the
+# corpus builds without it.
+#
+# -----------------------------------------------------------------------------
+# WHY THIS FILE EXISTS SEPARATELY FROM THE GENERATED QUERIES
+#
+# `data/generated_queries.yaml` is rewritten on every build. A decision recorded
+# there would survive exactly until the next rebuild and then vanish - silently,
+# with no error, leaving a subset that looks spot-checked and is not. Spot checks
+# are intake, like the phrasebook: hand-written, committed, reviewed like code.
+#
+# -----------------------------------------------------------------------------
+# WHAT A SPOT CHECK IS FOR
+#
+# Reviewing a TEMPLATE validates the phrasing of every query generated from it -
+# that is the efficiency the phrasebook exists for, and it is why a reviewer
+# reads ~100 templates instead of ~800 queries.
+#
+# What template review CANNOT validate is whether each SUBSTITUTION came out
+# right. A frame that reads perfectly with "website development" can be wrong
+# with "cloud migration" or "plot management systems". `quality.py` therefore
+# requires a fraction of every subset to be judged individually, which turns
+# template propagation from a loophole into a sampling strategy.
+#
+# Run `export-spot-checks` to get exactly the queries that still need judging,
+# sampled ACROSS templates rather than off the top of the list - a head-slice
+# would hand you twenty renderings of the same two templates, which is the one
+# thing template review has already covered.
+#
+# -----------------------------------------------------------------------------
+# DECISIONS
+#
+#   approved   a caller would say this, exactly as written
+#   rejected   they would not - say why in `notes`
+#
+# There is deliberately NO `needs_edit`. A generated query cannot be edited in
+# place; the next build overwrites it. If the wording is wrong, the TEMPLATE is
+# wrong - reject here and fix the template in its review bundle.
+#
+# A rejection OUTRANKS an approved template. A reviewer who looked at the actual
+# substitution and said no has seen more than a template-level approval did.
+#
+# `reviewed_by` and `reviewed_on` are REQUIRED, and a model's name is refused.
+# A review nobody can be asked about is indistinguishable from no review.
+# =============================================================================
+
+spot_checks:
+  - query_id: q-en-cap-atom-e-commerce-platforms
+    decision: approved
+    reviewed_by: FILL_ME
+    reviewed_on: FILL_ME
+    notes: null
+
+  - query_id: q-hi-deva-cap-atom-crm-development
+    decision: rejected
+    reviewed_by: FILL_ME
+    reviewed_on: FILL_ME
+    notes: >-
+      Example of a useful rejection: the frame is fine but nobody would put this
+      particular English noun in it - they would say the whole phrase in English.

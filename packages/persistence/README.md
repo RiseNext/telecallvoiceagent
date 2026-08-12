@@ -7,7 +7,9 @@ SQLAlchemy models, Alembic migrations, repositories, unit of work, and vector ac
 - ORM models and the mapping to/from domain entities.
 - Alembic migrations — the only way schema changes.
 - Repositories, which are the **only** place a tenant scope may be applied. A repository that can be called without an `organization_id` is a security bug waiting to happen.
-- The single vector-search helper. Every retrieval goes through it so that no caller can forget the tenant filter or the index tuning.
+- **The single `<=>`-issuing function.** Exactly one function here may construct or issue a pgvector distance query, so no caller can forget the tenant filter or the index tuning. The tenant predicate comes from the `TenantContext` the repository was constructed with, so there is no parameter by which a caller could supply a tenant.
+  - **This is the SQL, not the orchestration.** Embedding the query text, resolving which knowledge bases are in scope, and shaping a result for a tool live in a retrieval *service* in `rn_services`, which is this function's only caller. `rn_agent` cannot reach here at all — an import contract forbids it. See [DATA_MODEL §7](../../docs/DATA_MODEL.md#the-single-retrieval-helper--and-the-two-layers-it-is-split-across).
+  - **Not built yet.** Its column type and width are open decision **D-8**, so it cannot be written until ADR-011 lands.
 - Engine and session lifecycle, including the two-connection split.
 
 ## Rules
