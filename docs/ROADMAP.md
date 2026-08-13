@@ -9,7 +9,9 @@
 
 ## Current Phase
 
-**Phase 0 — complete. Phase 1 — complete (see caveats). Phase 2 — complete (see caveats). Phase 3 — Stage 1 COMPLETE (all sub-stages, human review closed); Stage 2 not started and correctly blocked.**
+**Phase 0 — complete. Phase 1 — complete (see caveats). Phase 2 — complete (see caveats). Phase 3 — Stage 1 COMPLETE (all sub-stages, human review closed); Stage 2 blocked, with one recorded exception below. Phase 4 — implemented except its wire-capture deliverable, which is blocked on external input.**
+
+Phase 4 depends on Phase 1 only and runs parallel to 2/3, which is why it is in flight while Phase 3 Stage 2 is blocked.
 
 Phase 3 is being built in two stages, deliberately, because [ADR-010](DECISIONS/ADR-010-defer-vector-storage-layout.md) forbids writing the vector schema before **D-8** is measured:
 
@@ -18,7 +20,9 @@ Phase 3 is being built in two stages, deliberately, because [ADR-010](DECISIONS/
 - **Stage 1c — the official Rise Next material, incorporated. Implemented.** The business source material supplied 2026-07-30, structured into ten categories with per-entry provenance; a four-value `authority` classification separating what retrieval may serve from what only a typed tool may (the pricing *policy* is RAG-eligible, a price *value* is not, CRM field lists are neither); a phrasebook across all eight subsets; provenance on every generated row; and four business-constraint gates — no numeric price anywhere in the corpus, pricing gold is the policy, lending gold is the not-a-lender disclaimer, and every adversarial intent present in an Indic subset.
 - **Stage 1d — corpus expansion. Implemented.** The supplied material fully decomposed into **143 passages and 804 queries**, adding no business fact: the 69 named sub-services became one passage each, the never-promise list its nine clauses, and the company profile, business process, financing disclaimer and pricing policy their separable claims. Plus capability-specific queries with a deterministic service-balanced sample per subset, capability-misattribution hard negatives, topic-scoped gold so a split-up list does not dilute a gold set, and a `no_passage_duplication` gate — which caught a real flaw in the first decomposition on its first run. The 18 invented seed passages are **retired**; every remaining passage is source-grounded or deliberately adversarial.
 - **Stage 1e — human review, complete.** On 2026-08-11 the Rise Next team approved **all 101 phrasebook templates across all eight subsets, all 7 service-name translation sets and all 76 spot-check queries**, in two passes; two templates (`hi-deva-industries`, `xs-deva-out-of-scope`) were corrected and the corrections approved. **Every subset is review-complete — 804/804 queries `native_reviewed`** — so `review_completeness` and `spot_check` both pass. **Two blocking gates remain, correctly**: no superseded content was supplied so the `stale` role is empty, and the corpus is 143 passages against a 600 target that was estimated rather than measured. §11's Option B (replace the count with a measured criterion) was taken to implementation and **stopped**: as documented it states no margin, and four inputs must be decided in an ADR first — see [research/D8_BAKEOFF.md](research/D8_BAKEOFF.md) §11. Note the spot-check floor is met with **zero margin** in every subset, so adding queries requires adding spot checks in the same change.
-- **Stage 2 — everything that touches the schema. Not started.** Migration `0003`, `document_chunks`, `vector_search()`, the 12 tools, `services`/`service_prices`, the permission-catalog migration, RiseNext seeding. **Blocked on D-8 closing.** Native-speaker review is no longer part of that block — it closed on 2026-08-11. What remains is superseded Rise Next content for the `stale` role, the `size`-gate methodology decision, and approval for a paid benchmark run.
+- **Stage 2 — everything that touches the schema. Not started, with one recorded exception.** Migration `0003`, `document_chunks`, `vector_search()`, the 12 tools, `services`/`service_prices`, the permission-catalog migration, RiseNext seeding. **Blocked on D-8 closing.** Native-speaker review is no longer part of that block — it closed on 2026-08-11. What remains is superseded Rise Next content for the `stale` role, the `size`-gate methodology decision, and approval for a paid benchmark run.
+
+  **The exception:** `search_knowledge` and an in-memory `KnowledgeRetriever` were built ahead of Stage 2 in a form that touches **no** schema and pre-empts **no** D-8 choice — no table, no vector column, no model, no width, no distance operator ([ADR-012](DECISIONS/ADR-012-offline-in-memory-retriever.md)). It needed no migration because `org:knowledge:read` was already frozen in `0001`. Nothing else in the Stage-2 list may follow it: the other 11 tools need `services`/`service_prices` and permissions that are **not** in the frozen catalog, and every storage decision still waits on ADR-011.
 
 **D-8 is still OPEN. No embedding model, width, column type or index has been chosen, and no paid API call has been made.**
 
@@ -29,16 +33,17 @@ The foundations exist and are exercised by tests against a real PostgreSQL. To b
 | `rn_core` | **Implemented.** Typed settings with fail-fast environment validation, UUIDv7 ids, UTC-only clock helpers, error taxonomy, centralised redaction, correlation contextvars, structured logging, OTel bootstrap (off by default). |
 | `rn_domain` | **Implemented.** 20 entities in 6 modules, value objects, enums, the permission catalog, `TenantContext`/`PlatformContext`, domain events, pure policies. Purity verified at runtime as well as by contract. |
 | `rn_persistence` | **Implemented.** 21 tables, ORM models with explicit domain mappers, tenant-scoped repositories, Unit of Work, Alembic baseline `0001`. |
-| `rn_services` | **Authorization seam plus the agent use cases.** `Principal`, membership-derived `build_tenant_context`, resource policies; `rn_services.contracts` (protocols and DTOs, no persistence imports) and `rn_services.agents` (published-configuration loader, knowledge catalog). Remaining business use cases belong to the phases that need them. |
-| `rn_providers` | **Two seams: text-mode `LLMProvider` and `EmbeddingProvider`, each with a deterministic offline fake.** Phase 3 adds the embedding seam (`embed_documents`/`embed_query`, `TextRole`, width-validating `EmbeddingBatch`) and an OpenAI embedding adapter tested entirely against a mocked transport — CI still runs with no network egress, and **no model has been selected** (D-8). `VoiceSession`, telephony, STT/TTS, messaging and storage seams are absent. |
-| `rn_agent` | **Implemented.** Immutable `AgentSnapshot` with a deterministic content hash, four-layer instruction composition, the typed tool registry with flat Realtime schema export, the five-stage dispatch pipeline, disclosure and opt-out guardrails (en/hi/te), a bounded text conversation loop, and two READ-only built-in tools. Framework-free, verified statically and at runtime. |
-| The V1 tool set (18 tools) | **Not built.** **12** arrive in Phase 3, `record_opt_out` in Phase 9, **five** in Phase 10. Each needs a permission that is not in the frozen catalog, so each of those phases owns a migration. |
+| `rn_services` | **Authorization seam, the agent use cases, and retrieval orchestration.** `Principal`, membership-derived `build_tenant_context`, resource policies; `rn_services.contracts` (protocols and DTOs, no persistence imports — now including `KnowledgeRetriever`) and `rn_services.agents` (published-configuration loader, knowledge catalog). `rn_services.retrieval` adds the **orchestration half** of [DATA_MODEL §7](DATA_MODEL.md) over an in-memory index — no SQL, no distance operator ([ADR-012](DECISIONS/ADR-012-offline-in-memory-retriever.md)); the `rn_persistence` half stays unwritten until D-8 closes. Remaining business use cases belong to the phases that need them. |
+| `rn_providers` | **Four seams, each with a deterministic offline fake: `LLMProvider`, `EmbeddingProvider`, `TelephonyProvider` and `VoiceSession`/`SessionCapabilities`.** Phase 4 adds the telephony seam with `ChunkPolicy` and the Exotel frame codec (whose unverified wire shapes are isolated in `ExotelDialect`), the realtime-voice seam, `rn_providers.audio` (`AudioFormat`, passthrough and anti-aliased polyphase transcoders over soxr), and the fake Exotel media server and fake realtime session that make an offline call simulation possible. Phase 3 added the embedding seam and an OpenAI embedding adapter tested entirely against a mocked transport — CI still runs with no network egress, and **no model has been selected** (D-8). **No real adapter exists for telephony or realtime voice**: the OpenAI Realtime client is Phase 5 and the Exotel REST/WebSocket client is Phase 8. STT/TTS, messaging and storage seams are absent. |
+| `rn_agent` | **Implemented.** Immutable `AgentSnapshot` with a deterministic content hash, four-layer instruction composition, the typed tool registry with flat Realtime schema export, the five-stage dispatch pipeline, disclosure and opt-out guardrails (en/hi/te), a bounded text conversation loop, and **three** READ-only built-in tools (two over knowledge-base metadata, plus `search_knowledge` over the retriever seam). Framework-free, verified statically and at runtime. |
+| The V1 tool set (18 tools) | **One of 18 built.** `search_knowledge` — **a Phase 3 tool** — was built ahead of Stage 2 on the already-frozen `org:knowledge:read` permission, so it needed no migration ([ADR-012](DECISIONS/ADR-012-offline-in-memory-retriever.md)). The other **11** of Phase 3's twelve arrive with Stage 2, `record_opt_out` in Phase 9, **five** in Phase 10 — and those do need permissions that are not in the frozen catalog, so each of those phases still owns a migration. |
 | `rn_orchestration` | none — Phase 11. No LangChain or LangGraph code exists anywhere. |
 | Database schema, Alembic migrations | **21 tables**, migrations `0001` and `0002`, round-trip verified (`upgrade → downgrade → upgrade`, and `0002` down/up over a real pre-`0002` row) on real PostgreSQL. `alembic check` clean. |
 | Row-level security | **Not implemented — Phase 15.** Isolation today is application scoping plus composite foreign keys. Do not read the tenant-isolation suite as covering RLS. |
 | Vector column, `document_chunks` | **Deliberately absent.** Open decision **D-8**, Phase 3 ([ADR-010](DECISIONS/ADR-010-defer-vector-storage-layout.md)). A test asserts they do not exist. |
-| Audio, telephony, realtime voice, STT/TTS, retrieval, API endpoints, job broker, scheduler, outbox relay, frontend pages | none |
-| Tests | **970 passing** — 831 `unit`, 93 `integration` against ephemeral PostgreSQL, 31 `provider` (mocked adapters), 15 `agent_eval` Tier-1; 244 of the total are the D-8 bake-off suite. Includes the cross-tenant security suite, the role-ownership suite, and the Phase-2 compliance gates. `live` and `load` are excluded by `addopts`, so a bare `pytest` cannot spend money. *(Rows here have been stale twice — 512/406/91, then 526/418/93. Recount per marker after every phase rather than carrying the number forward.)* |
+| The media-plane byte pipeline | **Implemented and tested offline (Phase 4).** `rn_voice.media` holds the ring buffer, aligner, pacer, `PlaybackLedger`, `SampleAligner` and barge-in; `rn_voice.session` holds the bridge. Framework-free by contract. **No socket is ever opened** — there is no adapter, no app entrypoint and no captured wire trace. |
+| Realtime voice, telephony, STT/TTS, **persistent** retrieval, API endpoints, job broker, scheduler, outbox relay, frontend pages | none. (Retrieval exists only as the in-memory Phase-3-Stage-2 prototype: no table, no vector, nothing stored. The audio path exists only against fakes.) |
+| Tests | **1186 passing** — 952 `unit`, 93 `integration` against ephemeral PostgreSQL, 116 `provider` (mocked adapters and the offline call simulation), 25 `agent_eval` Tier-1 (10 of them the offline Aira retrieval demo); 244 of the total are the D-8 bake-off suite, byte-identical to the Phase 3 commit. 174 of the total are Phase 4's media path, fakes and factory. Includes the cross-tenant security suite, the role-ownership suite, and the Phase-2 compliance gates. `live` and `load` are excluded by `addopts`, so a bare `pytest` cannot spend money. *(Rows here have been stale twice — 512/406/91, then 526/418/93. Recount per marker after every phase rather than carrying the number forward.)* |
 | Anything measured — latency, throughput, concurrency, cost | **nothing** |
 
 Every number in this repository is still a target or a budget. We have measured no performance characteristic of anything.
@@ -175,8 +180,66 @@ Every number in this repository is still a target or a budget. We have measured 
 
 ## In Progress
 
-**Nothing.** Phase 3 Stage 1 closed on 2026-08-11; Stage 2 is blocked on D-8 and must not be
-started before it (ADR-010). See **Next** and **Blocked**.
+**Phase 4 is implemented except its wire-capture deliverable, which is blocked on external
+input.** Phase 3 Stage 1 closed on 2026-08-11; Stage 2 is still blocked on D-8 and must not
+be started before it (ADR-010), with the single recorded exception in
+[ADR-012](DECISIONS/ADR-012-offline-in-memory-retriever.md). See **Next** and **Blocked**.
+
+Phase 4's six deliverables, as of 2026-08-13:
+
+| | Deliverable | State |
+|---|---|---|
+| D1 | `TelephonyProvider` / `VoiceSession` / `SessionCapabilities` seams | **done.** `supports_interim` present from day one (HC-20). |
+| D2 | `AudioTranscoder` — passthrough + polyphase, anti-aliased | **done.** Byte-exact goldens both directions at 8k/16k/24k; 5 kHz-to-3 kHz fold-down held below −40 dBFS, with naive decimation as a negative control. |
+| D3 | Outbound ring buffer, aligned and paced | **done.** 3200/3200/3840 derived rather than hardcoded; legality asserted over arbitrary delta sizes at every rate. |
+| D4 | `played_ms` reconciled against marks; barge-in as one function | **done.** Golden ledger file; one clear, one flush, one truncate, in order, with `audio_end_ms` biased low. |
+| D5 | `FakeTelephonyProvider` + `FakeRealtimeProvider`, driven by `provider`-marked tests | **done, except that they replay hand-authored tapes rather than captured ones** — that half depends on D6. Fault injection, mark loss and latency injection are all implemented to [TESTING §3.2/§3.3](TESTING.md). |
+| D6 | One `live` wire-capture spike against an Exotel sandbox | **BLOCKED, external — [PHASE_4G_WIRE_CAPTURE.md](PHASE_4G_WIRE_CAPTURE.md).** Needs a sandbox account, credentials and a consented number. |
+
+Also delivered under Phase 4 because other documents place them here: the **provider
+factory and its `PROVIDER_MODE` interlock** ([TESTING §3.1](TESTING.md)), and a
+**disabled recording tap point** in the bridge, so that answering **D-5** later costs a
+wiring change rather than a retrofit into a latency-critical loop.
+
+Four of the five "done when" criteria are met. The fifth — *the captured Exotel trace is
+committed and the four §6a questions are answered* — is unmet **by construction**, and no
+trace has been fabricated. Every unverified wire shape is a field on `ExotelDialect`,
+whose in-force instance is named `ASSUMED_DIALECT`; settling all four is editing one
+frozen dataclass, not a refactor.
+
+**One documented requirement was deliberately not met**, and the conflict is recorded
+rather than resolved by preference: [TESTING §3.3](TESTING.md) described the realtime fake
+as an in-process **WebSocket server**, while [TESTING §3.1](TESTING.md) forbids
+`rn_providers.fakes` from loading any transport library — enforced by a test. The enforced
+rule won; §3.3 now records the deviation.
+
+**A first slice of Phase 3 Stage 2 — the offline Aira retrieval demo — is complete
+(2026-08-12).** It is Phase-3 work: retrieval and the 12 tools are Phase 3 deliverables, and
+it was built ahead of the rest of Stage 2 in a form that touches no schema (ADR-012).
+It is recorded here only because it shares this branch.
+
+That slice delivered a text-mode retrieval demo over the reviewed 143-passage corpus, built
+entirely from what already existed and adding **no** schema:
+
+- `KnowledgeRetriever` / `RetrievedChunk` / `RetrievalResult` in `rn_services.contracts` — the
+  seam `rn_agent` depends on, and the one Stage 2's SQL-backed service will satisfy unchanged.
+- `rn_services.retrieval` — orchestration only, over an **in-memory** index: chunk with the
+  frozen policy, withhold instruction-shaped content before embedding, embed as documents,
+  rank exactly by cosine, clamp `k`, report under-return. No SQL, no distance operator, no
+  vector column. See [ADR-012](DECISIONS/ADR-012-offline-in-memory-retriever.md), which also
+  states the rule that it must not be extended.
+- `search_knowledge`, the first content-retrieval tool — READ, on the already-frozen
+  `org:knowledge:read` permission, so **no migration was required**. It is the third built-in
+  tool; the other 11 Phase-3 tools remain unbuilt.
+- `tests/demo_aira` — the composition root, the corpus adapter (read-only over the D-8 data
+  files) and a CLI:
+  `uv run python -m tests.demo_aira.run "what services does the company offer?"`
+
+What it deliberately did **not** do: no migration, no `document_chunks`, no vector
+column, no pgvector, no ingestion API or job, no paid provider, no embedding model or width,
+no change to the corpus or to any D-8 gate. The only embedder is `FakeEmbeddingProvider`, a
+trigram hasher with no semantic and no cross-script capability — **no number the demo produces
+is evidence about retrieval quality, and D-8 is untouched by it.**
 
 Phase 3 Stage 1 deliberately does **not** include: any migration, any vector column, any
 retrieval implementation, any of the 12 tools, and any choice of embedding model or width. The
@@ -460,11 +523,11 @@ Deliverables and evidence are listed under [Completed](#completed). Done when `u
 
 **Done when**
 
-- Golden-file tests: a known PCM input produces a byte-exact expected output at 8k/16k/24k, both directions.
-- A property test asserts every emitted chunk satisfies the alignment and size bounds, for arbitrary delta sizes.
-- A simulated barge-in test asserts all three operations fire, in order, with a `played_ms` within tolerance of the mark-derived ground truth.
-- The full bridge loop runs in CI against fakes with **zero paid API calls**.
-- The captured Exotel trace is committed and the four §6a questions are answered in `PROVIDER_CONSTRAINTS.md` with confidence tags upgraded.
+- ✅ Golden-file tests: a known PCM input produces a byte-exact expected output at 8k/16k/24k, both directions. *(The resampler runs in float and quantises explicitly — soxr's int16 path applies non-deterministic dither, which would make a byte-exact golden impossible.)*
+- ✅ A test asserts every emitted chunk satisfies the alignment and size bounds, for arbitrary delta sizes. *(A seeded sweep plus every policy boundary enumerated explicitly; `hypothesis` is referenced by TESTING.md but is not installed, and was not added for one test.)*
+- ✅ A simulated barge-in test asserts all three operations fire, in order, with a `played_ms` within tolerance of the mark-derived ground truth. *(Exact rather than tolerant — the clock is injected.)*
+- ✅ The full bridge loop runs in CI against fakes with **zero paid API calls**. *(Asserted on a fresh interpreter's module table: no transport library is loaded at all.)*
+- ⛔ The captured Exotel trace is committed and the four §6a questions are answered in `PROVIDER_CONSTRAINTS.md` with confidence tags upgraded. **BLOCKED on external input — [PHASE_4G_WIRE_CAPTURE.md](PHASE_4G_WIRE_CAPTURE.md).**
 
 **Key risks**
 

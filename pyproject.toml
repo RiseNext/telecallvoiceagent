@@ -167,6 +167,14 @@ ignore_missing_imports = true
 module = ["asyncpg.*", "testcontainers.*"]
 ignore_missing_imports = true
 
+# soxr ships no py.typed marker. It is reached from exactly one module
+# (`rn_providers.audio.transcoder`), behind a guarded import that raises a typed
+# ProviderError when the `rn-providers[audio]` extra is absent — so the untyped
+# surface is one call, `ResampleStream.resample_chunk`, and it is wrapped.
+[[tool.mypy.overrides]]
+module = ["soxr.*"]
+ignore_missing_imports = true
+
 # ===========================================================================
 # Pytest
 # ===========================================================================

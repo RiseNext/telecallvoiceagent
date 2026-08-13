@@ -2,7 +2,7 @@
 
 > **This document is the primary product source of truth.** When code and this document disagree, one of them is a bug — decide which, then fix it in the same change.
 >
-> **Status:** Phases 0–2 complete and merged; **Phase 3 Stage 1 complete** — the schema-independent foundations, the D-8 bake-off harness, and the Rise Next evaluation corpus (143 passages, 804 queries, human review closed 2026-08-11). Stage 2 is not started and is correctly blocked on D-8. See [docs/ROADMAP.md](docs/ROADMAP.md), which is the authority on what exists.
+> **Status:** Phases 0–2 complete and merged; **Phase 3 Stage 1 complete** — the schema-independent foundations, the D-8 bake-off harness, and the Rise Next evaluation corpus (143 passages, 804 queries, human review closed 2026-08-11). Stage 2 is blocked on D-8, with **one recorded exception** built ahead of it in a schema-free form (`search_knowledge` and an in-memory retriever — [ADR-012](docs/DECISIONS/ADR-012-offline-in-memory-retriever.md)). **Phase 4** (provider seams, fakes and the audio transcoder) is implemented except its Exotel wire-capture deliverable, which is blocked on external input. See [docs/ROADMAP.md](docs/ROADMAP.md), which is the authority on what exists.
 > **Last updated:** 2026-07-30
 > **Companions:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · [docs/ROADMAP.md](docs/ROADMAP.md) · [docs/DECISIONS/](docs/DECISIONS/)
 

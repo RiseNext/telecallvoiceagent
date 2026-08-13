@@ -244,14 +244,26 @@ def test_every_provider_fake_is_environment_agnostic() -> None:
 def test_the_implemented_fakes_construct_with_an_empty_environment() -> None:
     """The runtime complement: a fake must build with nothing set at all.
 
+    Every implemented fake, named explicitly. TESTING.md 3.1 promises this covers
+    *every* provider fake, so a new fake that reads settings has to be added here or
+    the promise quietly stops being true — which is how the interlock policy would
+    drift into being inconsistent between seams.
+
     Run in a subprocess with a stripped environment, because by the time this file
     executes the ambient environment is whatever the developer's shell happens to hold.
     """
     script = textwrap.dedent(
         """
-        from rn_providers.fakes import FakeEmbeddingProvider, FakeLLMProvider
+        from rn_providers.fakes import (
+            FakeEmbeddingProvider,
+            FakeLLMProvider,
+            FakeRealtimeProvider,
+            FakeTelephonyProvider,
+        )
         FakeLLMProvider([])
         FakeEmbeddingProvider(dimensions=8)
+        FakeRealtimeProvider([])
+        FakeTelephonyProvider([])
         print("ok")
         """
     )

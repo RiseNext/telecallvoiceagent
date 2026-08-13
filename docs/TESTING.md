@@ -112,9 +112,10 @@ This is the load-bearing section. Everything else in this document assumes it.
 
 ```
 packages/providers/src/rn_providers/fakes/
-    llm.py            FakeLLMProvider      IMPLEMENTED (Phase 2)
-    telephony.py      FakeTelephonyProvider
-    realtime.py       FakeRealtimeProvider
+    llm.py            FakeLLMProvider       IMPLEMENTED (Phase 2)
+    embeddings.py     FakeEmbeddingProvider IMPLEMENTED (Phase 3 Stage 1)
+    telephony.py      FakeTelephonyProvider IMPLEMENTED (Phase 4)
+    realtime.py       FakeRealtimeProvider  IMPLEMENTED (Phase 4)
     stt.py  tts.py    FakeSTTProvider / FakeTTSProvider
     messaging.py      FakeMessagingProvider
     storage.py        FakeStorageProvider  (in-memory S3)
@@ -122,7 +123,7 @@ packages/providers/src/rn_providers/fakes/
     tapes.py          tape loading + schema
 ```
 
-Only `llm.py` exists today; each of the others arrives with the seam it fakes.
+Four exist today; each of the others arrives with the seam it fakes.
 `FakeLLMProvider` replays a flat tape — the *n*-th `complete()` returns the *n*-th
 scripted turn — and does two things a bland fake would not: an **exhausted tape raises**
 rather than returning a default, so an extra provider round trip per turn cannot pass
@@ -148,6 +149,16 @@ the single provider factory in the composition root**, which is the one place th
 `PROVIDER_MODE` and decides between a fake and a real adapter. It arrives with that
 factory in **Phase 4**, alongside the first fakes that could actually do damage
 (telephony, realtime voice).
+
+**Implemented (Phase 4): `rn_providers.factory`.** `ProviderFactory` refuses
+`PROVIDER_MODE=fake` in a deployed environment at *construction*, not at first use, and it
+is the only module in `packages/` that reads the setting — asserted by a test that greps
+the tree, so the policy cannot quietly become N places. Requesting `real` raises a typed
+`ConfigurationError` naming the phase that will supply each adapter (realtime is Phase 5,
+telephony is Phase 8), because a refusal that says what is missing beats an
+`AttributeError` three frames deep. There is still no app entrypoint to call it from, so
+the interlock still protects nothing in practice — it exists so the first entrypoint has
+one obvious place to wire providers and cannot invent a second.
 
 Three reasons it belongs there and not in each constructor:
 
@@ -203,7 +214,9 @@ And note the 24 kHz case, which is where the naive reading goes wrong. At 24 kHz
 
 ### 3.3 `FakeRealtimeProvider` — a scripted event tape
 
-The realtime seam is the one where a mock made of `unittest.mock.AsyncMock` produces confident nonsense. The fake is a small in-process WebSocket server (so real serialization, real framing and real backpressure are exercised) driven by a script:
+The realtime seam is the one where a mock made of `unittest.mock.AsyncMock` produces confident nonsense. The fake is driven by a script:
+
+> **Deviation, recorded rather than silently taken (Phase 4).** This paragraph previously described the fake as *"a small in-process WebSocket server (so real serialization, real framing and real backpressure are exercised)"*. That contradicts §3.1 above, which is **enforced** by `tests/unit/test_framework_independence.py`: importing `rn_providers.fakes` must load no transport library, `websockets` named explicitly. The two cannot both hold. The enforced test won — a socket-based fake would break the offline guarantee every other fake depends on, and no Phase-4 assertion needs framing or backpressure. `FakeRealtimeProvider` is an in-process async event source instead. If a later phase genuinely needs framing exercised, that is a new decision: it has to move the fake out of `rn_providers.fakes` or relax §3.1 deliberately, not quietly.
 
 ```python
 script = RealtimeScript()

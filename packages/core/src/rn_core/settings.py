@@ -28,7 +28,7 @@ from datetime import time
 from enum import StrEnum
 from typing import Any, Self
 
-from pydantic import Field, SecretStr, model_validator
+from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic import ValidationError as PydanticValidationError
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -36,6 +36,7 @@ from rn_core.errors import ConfigurationError
 
 __all__ = [
     "AppSettings",
+    "AudioSettings",
     "ComplianceSettings",
     "DatabaseSettings",
     "EmbeddingSettings",
@@ -43,8 +44,12 @@ __all__ = [
     "IterativeScanMode",
     "LogFormat",
     "ObservabilitySettings",
+    "ProviderMode",
+    "ProviderSettings",
+    "ResamplerQualityName",
     "RetrievalSettings",
     "Settings",
+    "TelephonySettings",
     "get_settings",
     "reset_settings_cache",
 ]
@@ -172,6 +177,96 @@ class ComplianceSettings(_Base):
     )
 
 
+class ProviderMode(StrEnum):
+    """Whether this process talks to real providers or to the in-repository fakes.
+
+    The single switch TESTING.md §3.1 describes. It is read in exactly one place —
+    `rn_providers.factory` — because the realistic failure is the *wiring* choosing a
+    fake, not a fake being constructed, and a check repeated per seam is a check
+    somebody forgets on the seam that ships.
+    """
+
+    FAKE = "fake"
+    """Every seam is served by its deterministic in-repository fake. No credentials, no
+    network, no cost. Refused outright in a deployed environment."""
+
+    REAL = "real"
+    """Real adapters. Most do not exist yet: the realtime client is Phase 5 and the
+    telephony client is Phase 8, and the factory says so by name rather than failing
+    obscurely."""
+
+
+class ProviderSettings(_Base):
+    """Which implementations back the provider seams.
+
+    Defaults to `FAKE`, deliberately: a developer who has cloned the repository and run
+    nothing else should get a working, credential-free system, and the one environment
+    where that default is dangerous refuses to start with it.
+    """
+
+    mode: ProviderMode = Field(default=ProviderMode.FAKE, alias="PROVIDER_MODE")
+
+
+class ResamplerQualityName(StrEnum):
+    """libsoxr quality presets, as configuration.
+
+    A closed set rather than a free string so a typo is a startup failure instead of a
+    resampler that silently falls back to a preset nobody chose. The values mirror
+    `rn_providers.audio.ResamplerQuality`; `rn_core` may not import `rn_providers`
+    (it sits below it), so the two are kept in step by a test rather than by an import.
+    """
+
+    QUICK = "QQ"
+    LOW = "LQ"
+    MEDIUM = "MQ"
+    HIGH = "HQ"
+    VERY_HIGH = "VHQ"
+
+
+class AudioSettings(_Base):
+    """Media-path tuning.
+
+    `resampler_quality` starts **high** per ADR-003 and is lowered only if profiling
+    proves the transcoder is a real cost — which at 20 ms frames is unlikely, and the
+    likely culprit would be Python-level per-frame overhead rather than soxr.
+    """
+
+    resampler_quality: ResamplerQualityName = Field(
+        default=ResamplerQualityName.HIGH, alias="AUDIO_RESAMPLER_QUALITY"
+    )
+
+
+class TelephonySettings(_Base):
+    """Telephony defaults that are not per-call.
+
+    `default_sample_rate` is only the fallback applied when an agent version does not
+    pin one. **The rate is per-agent and pinned to the version** (ADR-003), resolved at
+    dial time and read back from the provider's `start` event where possible — because
+    the query parameter that requests it is unverified (§6a-2, anti-fact #9). A global
+    rate here would quietly become the answer for every agent, which is what pinning it
+    to the version exists to prevent.
+
+    24000 is the default because it removes resampling on the OpenAI path and cuts
+    minimum-chunk accumulation from 200 ms to 80 ms. 8000 is right for Sarvam-primary
+    agents, where both cascade legs then become passthrough.
+    """
+
+    default_sample_rate: int = Field(default=24000, alias="DEFAULT_TELEPHONY_SAMPLE_RATE")
+
+    @field_validator("default_sample_rate")
+    @classmethod
+    def _rate_is_supported(cls, value: int) -> int:
+        # The three legal configurations (ADR-003). Duplicated from
+        # `rn_providers.audio.SUPPORTED_RATES` rather than imported, because `rn_core`
+        # sits below `rn_providers`; a test asserts the two agree.
+        if value not in {8000, 16000, 24000}:
+            raise ValueError(
+                "DEFAULT_TELEPHONY_SAMPLE_RATE must be 8000, 16000 or 24000 — the three "
+                "configurations ADR-003 permits."
+            )
+        return value
+
+
 class IterativeScanMode(StrEnum):
     """pgvector's `hnsw.iterative_scan` values.
 
@@ -277,6 +372,9 @@ class Settings(_Base):
     compliance: ComplianceSettings = Field(default_factory=ComplianceSettings)
     embedding: EmbeddingSettings = Field(default_factory=EmbeddingSettings)
     retrieval: RetrievalSettings = Field(default_factory=RetrievalSettings)
+    audio: AudioSettings = Field(default_factory=AudioSettings)
+    telephony: TelephonySettings = Field(default_factory=TelephonySettings)
+    providers: ProviderSettings = Field(default_factory=ProviderSettings)
 
     @property
     def environment(self) -> Environment:
@@ -396,6 +494,9 @@ class Settings(_Base):
             # width is how D-8 would get decided in a fixture.
             "embedding": EmbeddingSettings(_env_file=None),
             "retrieval": RetrievalSettings(_env_file=None),
+            "audio": AudioSettings(_env_file=None),
+            "telephony": TelephonySettings(_env_file=None),
+            "providers": ProviderSettings(_env_file=None),
         }
         defaults.update(overrides)
         return cls(_env_file=None, **defaults)

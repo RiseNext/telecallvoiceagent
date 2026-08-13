@@ -242,12 +242,20 @@ def test_specs_iterate_in_a_deterministic_order() -> None:
     assert [spec.name for spec in REGISTRY.specs()] == sorted(REGISTRY.names)
 
 
-def test_the_builtin_set_is_exactly_the_phase_2_two() -> None:
-    """Pinned deliberately. The V1 tool set is Phase 3/9/10; if a third tool appears
-    here without a roadmap phase behind it, that is scope creep and this catches it."""
-    assert REGISTRY.names == frozenset({"list_knowledge_bases", "find_knowledge_base"})
+def test_the_builtin_set_is_exactly_the_declared_three() -> None:
+    """Pinned deliberately. The rest of the V1 tool set is Phase 3/9/10; if a fourth
+    tool appears here without a roadmap phase behind it, that is scope creep and this
+    catches it.
+
+    Phase 2 pinned two. A first slice of Phase 3 Stage 2 adds `search_knowledge` — content retrieval over the
+    `KnowledgeRetriever` seam, on the `org:knowledge:read` permission that migration
+    `0001` already froze, so it needed no migration to arrive.
+    """
+    assert REGISTRY.names == frozenset(
+        {"list_knowledge_bases", "find_knowledge_base", "search_knowledge"}
+    )
 
 
 def test_every_builtin_tool_is_read_only() -> None:
-    """Phase 2 ships no tool that changes anything."""
+    """Nothing shipped so far changes anything."""
     assert all(spec.effect is Effect.READ for spec in REGISTRY.specs())

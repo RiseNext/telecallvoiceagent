@@ -45,3 +45,24 @@ Stateless as a process, **stateful as a connection holder**. A live call is pinn
 3. **Blocking work in the frame loop.** One await on something slow and every call on the instance stutters at once.
 
 Full detail: [REALTIME_VOICE.md](../../docs/REALTIME_VOICE.md).
+
+## What exists today (Phase 4)
+
+The media-plane byte pipeline, built and tested entirely offline. **No socket is ever
+opened**: there is no app entrypoint, no realtime adapter and no telephony adapter.
+
+- `rn_voice.media` — the outbound ring buffer and aligner, the pacer, `PlaybackLedger`,
+  `SampleAligner`, barge-in, an injected `Clock`, and a **disabled** recording tap for
+  open decision D-5. Audio format arithmetic and transcoding come from
+  `rn_providers.audio`.
+- `rn_voice.session` — `AudioBridge`, which wires a telephony transport to a
+  `VoiceSession` and owns the only call site of `handle_barge_in`.
+
+`rn_voice.media` may never import LangChain, LangGraph, `rn_orchestration`, `rn_agent` or
+`rn_services`; an import-linter contract enforces it and it does not relax. Nothing in the
+media or session layers reads the clock directly — a test asserts that too, because
+barge-in correctness is a timing relationship and only an injected clock makes it testable.
+
+Session pre-warming, the 10-second connect deadline, tool dispatch on its own task, the
+agent-snapshot cache, session rollover across the two independent 60-minute clocks and
+turn-latency instrumentation are **Phase 5**.

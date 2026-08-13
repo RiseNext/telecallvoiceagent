@@ -480,7 +480,7 @@ Why the split, rather than one function in either layer:
 
 Phase 3 Stage 2 makes that mechanical rather than a rule people remember: a structural test greps the tracked source for `<=>`, `cosine_distance`, `l2_distance`, `max_inner_product` and `.op("<=>")`, and asserts the only match is inside that one module.
 
-**Neither half exists yet.** The physical schema it queries is open decision **D-8**, so the function cannot be written until [ADR-011](research/D8_BAKEOFF.md) fixes the column type and width. What Stage 1 delivered is the layer *below* both: the `EmbeddingProvider` seam that the orchestration layer will call.
+**The orchestration half exists; the implementation half does not.** A first slice of Phase 3 Stage 2 built `rn_services.retrieval` — the orchestration column above, over an **in-memory** index, issuing no SQL and no distance operator ([ADR-012](DECISIONS/ADR-012-offline-in-memory-retriever.md)). The persistence function still cannot be written: the physical schema it queries is open decision **D-8**, and it waits on [ADR-011](research/D8_BAKEOFF.md) fixing the column type and width. Stage 1 delivered the layer *below* both — the `EmbeddingProvider` seam the orchestration layer calls.
 
 ---
 
