@@ -6,11 +6,13 @@ calls, in CI, with no network egress — and to exercise the parts of the pipeli
 that only a real tool can: typed argument validation, `NOT_FOUND`, tenant scoping,
 and a service handle reached through a protocol.
 
-**They are not the V1 tool set.** `search_knowledge`, `get_service_pricing`,
-`book_meeting`, `send_whatsapp` and the rest are Phase 3, 9 and 10 (ROADMAP), and
-they need retrieval, idempotency keys, rate limits and compliance gates that do not
-exist yet. Nothing here retrieves document content: there is no `documents` table
-and no vector column, because that is open decision **D-8** (ADR-010).
+**They are not the V1 tool set.** `get_service_pricing`, `book_meeting`,
+`send_whatsapp` and the rest are Phase 3, 9 and 10 (ROADMAP), and they need
+idempotency keys, rate limits and compliance gates that do not exist yet. Content
+retrieval now lives next door in `search.py`, over the `KnowledgeRetriever` seam;
+**nothing in this module retrieves document content**, and there is still no
+`documents` table and no vector column, because that is open decision **D-8**
+(ADR-010).
 
 Between them they cover a genuine conversational need — an agent that cannot say
 what it is able to help with is a bad agent — while staying entirely inside what
@@ -26,7 +28,7 @@ from pydantic import Field
 from rn_agent.tools.base import Effect, ToolArgs, ToolReply, ToolRuntime
 from rn_agent.tools.registry import ToolRegistry
 
-__all__ = ["FindKnowledgeBaseArgs", "ListKnowledgeBasesArgs", "register_builtin_tools"]
+__all__ = ["FindKnowledgeBaseArgs", "ListKnowledgeBasesArgs", "register_knowledge_tools"]
 
 #: Upper bound on how many topics one tool call returns.
 #:
@@ -66,12 +68,13 @@ class FindKnowledgeBaseArgs(ToolArgs):
     )
 
 
-def register_builtin_tools(registry: ToolRegistry) -> None:
-    """Declare the built-in tools on a registry.
+def register_knowledge_tools(registry: ToolRegistry) -> None:
+    """Declare the knowledge-**metadata** tools on a registry.
 
     A function rather than module-level decorators so that a test can build an
-    isolated registry with exactly these tools. The process-wide registry calls it
-    once, at import.
+    isolated registry with exactly these tools. `register_builtin_tools` calls it
+    alongside the retrieval tools; the process-wide registry calls that, once, at
+    import.
     """
 
     @registry.tool(

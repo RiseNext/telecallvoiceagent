@@ -34,7 +34,7 @@ from rn_domain.tenancy import TenantContext
 # protocols and DTOs and imports no persistence, so the agent layer names the
 # capability without loading SQLAlchemy. Asserted by
 # `tests/unit/test_framework_independence.py`.
-from rn_services.contracts import KnowledgeCatalog
+from rn_services.contracts import KnowledgeCatalog, KnowledgeRetriever
 
 __all__ = [
     "INJECTED_CONTEXT_KEYS",
@@ -172,6 +172,10 @@ class ToolServices:
     """
 
     knowledge: KnowledgeCatalog | None = None
+    #: Content retrieval, as distinct from the metadata `knowledge` answers. Separate
+    #: handles because they have different costs and different wiring: a caller that
+    #: only lists topics should not have to construct an embedding provider.
+    retrieval: KnowledgeRetriever | None = None
 
     def require_knowledge(self) -> KnowledgeCatalog:
         if self.knowledge is None:
@@ -179,6 +183,13 @@ class ToolServices:
                 "This tool needs a knowledge catalog and none was wired into ToolServices."
             )
         return self.knowledge
+
+    def require_retrieval(self) -> KnowledgeRetriever:
+        if self.retrieval is None:
+            raise InvariantViolation(
+                "This tool needs a knowledge retriever and none was wired into ToolServices."
+            )
+        return self.retrieval
 
 
 @dataclass(frozen=True, slots=True)

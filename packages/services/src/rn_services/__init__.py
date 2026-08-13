@@ -36,7 +36,10 @@ from rn_services.contracts import (
     AgentConfigurationSource,
     KnowledgeBaseSummary,
     KnowledgeCatalog,
+    KnowledgeRetriever,
     PublishedAgentConfiguration,
+    RetrievalResult,
+    RetrievedChunk,
 )
 from rn_services.policies import (
     ensure_can_export_calls,
@@ -45,17 +48,34 @@ from rn_services.policies import (
     ensure_organization_active,
     ensure_same_tenant,
 )
+from rn_services.retrieval import (
+    IndexBuildReport,
+    IndexedChunk,
+    InMemoryKnowledgeIndex,
+    InMemoryKnowledgeRetriever,
+    KnowledgeDocument,
+    build_in_memory_index,
+)
 
 __version__ = "0.1.0"
 
 __all__ = [
     "AgentConfigurationService",
     "AgentConfigurationSource",
+    "InMemoryKnowledgeIndex",
+    "InMemoryKnowledgeRetriever",
+    "IndexBuildReport",
+    "IndexedChunk",
     "KnowledgeBaseSummary",
     "KnowledgeCatalog",
     "KnowledgeCatalogService",
+    "KnowledgeDocument",
+    "KnowledgeRetriever",
     "Principal",
     "PublishedAgentConfiguration",
+    "RetrievalResult",
+    "RetrievedChunk",
+    "build_in_memory_index",
     "build_platform_context",
     "build_tenant_context",
     "ensure_can_export_calls",

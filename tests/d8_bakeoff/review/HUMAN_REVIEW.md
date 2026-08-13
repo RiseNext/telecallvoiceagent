@@ -1,5 +1,6 @@
 # D-8 human review — what is still waiting on a person
 
+
 > ## ✅ COMPLETE — this review finished on 2026-08-11
 >
 > **Every language item in this document was reviewed and approved by the Rise Next team**
